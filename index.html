@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BVB Portfolio Tracker</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .file-input {
+            margin-bottom: 20px;
+        }
+
+        .file-input label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .file-input .file-wrapper {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .file-input input[type="file"] {
+            display: none;
+        }
+
+        .file-input .file-label {
+            background-color: #6c63ff;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .file-input .file-name {
+            margin-left: 10px;
+            font-size: 14px;
+            color: #333;
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .input-group, .toggle-container {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+        }
+
+        /* Custom Checkbox Styling */
+        .toggle-container input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            width: 50px;
+            height: 25px;
+            border-radius: 30px;
+            background-color: #ccc;
+            position: relative;
+            transition: background-color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .toggle-container input[type="checkbox"]:checked {
+            background-color: #6c63ff;
+        }
+
+        .toggle-container input[type="checkbox"]:before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: white;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-container input[type="checkbox"]:checked:before {
+            transform: translateX(25px);
+        }
+
+        /* Adjust label for better visual alignment */
+        .toggle-container label {
+            margin-right: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        button {
+            background-color: #6c63ff;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 30px;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #6c63ff;
+            color: white;
+        }
+
+        .positive-difference {
+            color: green;
+            font-weight: bold;
+        }
+
+        .negative-difference {
+            color: red;
+            font-weight: bold;
+        }
+
+        /* Layout and Spacing */
+        .report-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px; /* Controls the spacing between #report and #investmentSuggestions */
+        }
+
+        #report {
+            margin-top: 30px;
+        }
+
+        #investmentSuggestions {
+            padding-top: 20px;
+        }
+
+        /* New Styling for Investment Suggestions */
+        #investmentSuggestions h3 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        #investmentSuggestions .total-investment {
+            font-size: 20px;
+            color: #6c63ff;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #f4f4f9;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        #investmentSuggestions ul {
+            list-style-type: none;
+            padding-left: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* 3 columns */
+            gap: 20px;
+        }
+
+        #investmentSuggestions li {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            font-size: 18px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #investmentSuggestions li:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #investmentSuggestions li .investment-amount {
+            font-size: 20px;
+            color: #6c63ff;
+            font-weight: bold;
+        }
+
+        #investmentSuggestions li .investment-symbol {
+            font-size: 16px;
+            color: #888;
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 768px) {
+            #investmentSuggestions ul {
+                grid-template-columns: 1fr 1fr; /* 2 columns on small screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            #investmentSuggestions ul {
+                grid-template-columns: 1fr; /* 1 column on extra small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h2>BVB Portfolio Tracker</h2>
+
+<div class="container">
+    <!-- File Inputs -->
+    <div class="file-input section">
+        <label for="bvbFile">Upload BVB Companies CSV</label>
+        <div class="file-wrapper">
+            <label for="bvbFile" class="file-label">Choose file</label>
+            <input type="file" id="bvbFile" accept=".csv">
+            <span class="file-name" id="bvbFileName">No file chosen</span>
+        </div>
+    </div>
+
+    <div class="file-input section">
+        <label for="portfolioFile">Upload Current Portfolio CSV</label>
+        <div class="file-wrapper">
+            <label for="portfolioFile" class="file-label">Choose file</label>
+            <input type="file" id="portfolioFile" accept=".csv">
+            <span class="file-name" id="portfolioFileName">No file chosen</span>
+        </div>
+    </div>
+
+    <!-- Portfolio Total Investment -->
+    <div class="input-group section">
+        <label for="totalInvestment">Total Portfolio Value (RON)</label>
+        <input type="number" id="totalInvestment" placeholder="Enter total portfolio value in RON">
+    </div>
+
+    <!-- Filter Portfolio Toggle -->
+    <div class="toggle-container section">
+        <label for="filterPortfolioToggle">Only consider companies in my portfolio</label>
+        <input type="checkbox" id="filterPortfolioToggle" checked>
+    </div>
+
+    <!-- New Investment Toggle -->
+    <div class="toggle-container section">
+        <label for="newInvestmentToggle">Enable New Investment</label>
+        <input type="checkbox" id="newInvestmentToggle">
+    </div>
+
+    <!-- New Investment Inputs -->
+    <div id="investmentFields" style="display: none;" class="section">
+        <div class="input-group">
+            <label for="newInvestmentAmount">New Investment Amount (RON)</label>
+            <input type="number" id="newInvestmentAmount" placeholder="Enter new investment amount">
+        </div>
+
+        <div class="input-group">
+            <label for="minInvestmentAmount">Minimum Investment per Stock (RON)</label>
+            <input type="number" id="minInvestmentAmount" placeholder="Enter minimum investment per stock">
+        </div>
+    </div>
+
+    <button id="generateReport">Generate Report</button>
+
+    <!-- Report and Investment Suggestions -->
+    <div class="report-container">
+        <!-- Report section -->
+        <div id="report"></div>
+
+        <!-- Investment suggestions section -->
+        <div id="investmentSuggestions"></div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('bvbFile').addEventListener('change', function() {
+        const fileName = this.files.length > 0 ? this.files[0].name : "No file chosen";
+        document.getElementById('bvbFileName').textContent = fileName;
+    });
+
+    document.getElementById('portfolioFile').addEventListener('change', function() {
+        const fileName = this.files.length > 0 ? this.files[0].name : "No file chosen";
+        document.getElementById('portfolioFileName').textContent = fileName;
+    });
+
+    document.getElementById('newInvestmentToggle').addEventListener('change', function() {
+        document.getElementById('investmentFields').style.display = this.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('generateReport').addEventListener('click', function() {
+        const bvbFile = document.getElementById('bvbFile').files[0];
+        const portfolioFile = document.getElementById('portfolioFile').files[0];
+        const totalInvestment = parseFloat(document.getElementById('totalInvestment').value);
+        const onlyPortfolioCompanies = document.getElementById('filterPortfolioToggle').checked;
+        const newInvestment = document.getElementById('newInvestmentToggle').checked
+            ? parseFloat(document.getElementById('newInvestmentAmount').value)
+            : 0;
+        const minInvestmentAmount = document.getElementById('newInvestmentToggle').checked
+            ? parseFloat(document.getElementById('minInvestmentAmount').value)
+            : 0;
+
+        if (!bvbFile || !portfolioFile || isNaN(totalInvestment)) {
+            alert('Please upload both files and enter the total portfolio value.');
+            return;
+        }
+
+        const reader1 = new FileReader();
+        const reader2 = new FileReader();
+
+        reader1.onload = function(event) {
+            const bvbData = parseCSV(event.target.result);
+            reader2.onload = function(event) {
+                const portfolioData = parseCSV(event.target.result);
+                generateReport(bvbData, portfolioData, totalInvestment, onlyPortfolioCompanies, newInvestment, minInvestmentAmount);
+            };
+            reader2.readAsText(portfolioFile);
+        };
+
+        reader1.readAsText(bvbFile);
+    });
+
+    function parseCSV(data) {
+        const rows = data.split("\n").filter(row => row.trim() !== "");
+        const headers = rows.shift().split(",");
+        return rows.map(row => {
+            const values = row.split(",");
+            return headers.reduce((acc, header, i) => {
+                acc[header.trim()] = isNaN(values[i]) ? values[i].trim() : parseFloat(values[i].trim());
+                return acc;
+            }, {});
+        });
+    }
+
+    function generateReport(bvbData, portfolioData, totalInvestment, onlyPortfolioCompanies, newInvestment, minInvestmentAmount) {
+        const reportDiv = document.getElementById('report');
+        let normalizedData = bvbData;
+
+        if (onlyPortfolioCompanies) {
+            normalizedData = bvbData.filter(bvb => portfolioData.some(portfolio => portfolio.symbol === bvb.symbol));
+        }
+
+        const totalWeight = normalizedData.reduce((sum, company) => sum + company.weight, 0);
+        normalizedData = normalizedData.map(company => ({
+            ...company,
+            normalizedWeight: (company.weight / totalWeight) * 100
+        }));
+
+        const rows = normalizedData.map(company => {
+            const portfolioCompany = portfolioData.find(p => p.symbol === company.symbol) || { weight: 0 };
+            const differenceRON = ((portfolioCompany.weight - company.normalizedWeight) / 100) * totalInvestment;
+            const differencePercent = portfolioCompany.weight - company.normalizedWeight;
+            const differenceClass = differenceRON >= 0 ? 'positive-difference' : 'negative-difference';
+            return `
+                <tr>
+                    <td>${company.symbol}</td>
+                    <td>${company.weight.toFixed(2)}%</td>
+                    <td>${company.normalizedWeight.toFixed(2)}%</td>
+                    <td>${portfolioCompany.weight.toFixed(2)}%</td>
+                    <td class="${differenceClass}">${differenceRON.toFixed(2)} RON (${differencePercent.toFixed(2)}%)</td>
+                </tr>
+            `;
+        }).join('');
+
+        reportDiv.innerHTML = `
+            <h3>Portfolio Comparison</h3>
+            <table>
+                <tr>
+                    <th>Symbol</th>
+                    <th>BVB Weight</th>
+                    <th>Normalized BVB Weight</th>
+                    <th>Portfolio Weight</th>
+                    <th>Difference (RON and %)</th>
+                </tr>
+                ${rows}
+            </table>
+        `;
+
+        if (newInvestment > 0) {
+            const suggestions = generateInvestmentSuggestions(normalizedData, newInvestment, minInvestmentAmount);
+            console.log(suggestions)
+            document.getElementById('investmentSuggestions').innerHTML = `
+                <h3>Investment Suggestions</h3>
+                <div class="total-investment">Total New Investment: ${newInvestment.toFixed(2)} RON</div>
+                <ul>
+                    ${suggestions.map(suggestion => `
+                        <li>
+                            <div class="investment-symbol">${suggestion.symbol}</div>
+                            <div class="investment-amount">${suggestion.amount.toFixed(2)} RON</div>
+                        </li>`).join('')}
+                </ul>
+            `;
+        }
+    }
+
+    function generateInvestmentSuggestions(data, newInvestment, minInvestmentAmount) {
+        // Filter companies with negative weight differences (only those that need investment)
+        const suggestionsData = data.filter(company => (company.normalizedWeight - company.weight) > 0);
+
+        // Sort companies by the largest negative difference (largest need for investment)
+        suggestionsData.sort((a, b) => (b.normalizedWeight - b.weight) - (a.normalizedWeight - a.weight));
+
+        // Calculate the total difference for the companies that need investment
+        const totalDifference = suggestionsData.reduce((sum, company) => sum + (company.normalizedWeight - company.weight), 0);
+
+        let remainingInvestment = newInvestment;
+        const suggestions = [];
+
+        // Allocate the total investment based on the largest negative difference
+        suggestionsData.forEach(company => {
+            const differencePercent = company.normalizedWeight - company.weight;
+            const proportionalInvestment = (differencePercent / totalDifference) * newInvestment;
+
+            // Ensure each company gets at least the minimum allowed investment
+            const investmentAmount = Math.max(proportionalInvestment, minInvestmentAmount);
+
+            remainingInvestment -= investmentAmount;
+
+            suggestions.push({
+                symbol: company.symbol,
+                amount: investmentAmount
+            });
+        });
+
+        // If there is remaining investment, distribute it among the companies
+        if (remainingInvestment > 0) {
+            // Sort the suggestions again to prioritize the most underweight companies
+            suggestions.sort((a, b) => {
+                const companyA = suggestionsData.find(company => company.symbol === a.symbol);
+                const companyB = suggestionsData.find(company => company.symbol === b.symbol);
+                return (companyB.normalizedWeight - companyB.weight) - (companyA.normalizedWeight - companyA.weight);
+            });
+
+            // Distribute the remaining investment to the companies
+            for (let i = 0; remainingInvestment > 0 && i < suggestions.length; i++) {
+                const currentAmount = suggestions[i].amount;
+                const adjustedAmount = Math.max(currentAmount + remainingInvestment, minInvestmentAmount);
+
+                suggestions[i].amount = adjustedAmount;
+                remainingInvestment -= (adjustedAmount - currentAmount);
+            }
+        }
+
+        // Ensure the total investment matches the new investment
+        const totalSuggested = suggestions.reduce((sum, suggestion) => sum + suggestion.amount, 0);
+        if (totalSuggested !== newInvestment) {
+            const difference = newInvestment - totalSuggested;
+            if (difference > 0) {
+                // Add the remaining difference to the first suggestion (most underweight)
+                suggestions[0].amount += difference;
+            } else if (difference < 0) {
+                // Reduce the excess from the first suggestion (most underweight)
+                suggestions[0].amount += difference;
+            }
+        }
+
+        return suggestions;
+    }
+
+
+</script>
+
+</body>
+</html>
