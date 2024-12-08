@@ -86,5 +86,6 @@ You can access the app at:
 The app is in a **sufficiently working condition** for its intended use and is fully functional for comparing portfolios with the BVB index, generating investment suggestions, and allowing for new investments.
 
 ### Planned Enhancements:
-1. **CSV Input Validation**: The CSV input format should be validated to ensure that the files uploaded are correctly formatted and contain valid data.
-2. **Refactor Logic for Suggestion Generation**: The current suggestion generation logic could be improved, as there may be cases where it does not work as expected or does not produce accurate results. Further testing and refinement are needed to ensure the logic handles all edge cases correctly.
+1. **Refactor `getUnderweightedStocks` Method**: The current implementation of the method is lengthy and handles multiple responsibilities. It should be refactored to improve readability and maintainability by breaking it down into smaller, more focused functions.
+2. **CSV Input Validation**: There should be validation for the CSV input format to ensure that uploaded files are correctly structured and contain valid data, preventing errors during processing.
+3. **Improve Suggestion Generation Logic**: The logic behind generating investment suggestions needs enhancement, as there may be scenarios where it doesn't perform as expected or produces inaccurate results. Further refinement and testing are necessary to ensure that edge cases are properly handled and the logic works reliably.

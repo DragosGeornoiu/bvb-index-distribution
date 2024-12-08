@@ -240,6 +240,24 @@
         }
       }
 
+      //If I can put investments towards all the underweighted stocks with the current investment amount, I won't look for minimum investment,
+      //just use everything towards that and mention how much remaining money to invest i will have
+      let sumOfDifferences = underweightedStocks.reduce((sum, stock) => sum + stock.difference, 0);
+      if (newInvestment + sumOfDifferences >= 0) {
+          // Loop through underweighted stocks to assign amounts
+          for (let i = 0; i < underweightedStocks.length; i++) {
+              underweightedStocks[i].amount = underweightedStocks[i].difference * -1;
+          }
+
+          // Add an additional "other" stock to the array
+          underweightedStocks.push({
+              symbol: "other",
+              amount: totalInvestment + underweightedStocks[0].difference
+          });
+
+          return underweightedStocks;
+      }
+
       // sorting them by the highest difference to the lowest
       underweightedStocks.sort((a, b) => a.difference - b.difference); // Sort by the difference
 
