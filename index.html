@@ -415,7 +415,7 @@
         `;
 
         if (newInvestment > 0) {
-            const suggestions = generateInvestmentSuggestions(normalizedData, newInvestment, minInvestmentAmount);
+            const suggestions = generateInvestmentSuggestions(normalizedData, portfolioData, totalInvestment, newInvestment, minInvestmentAmount);
             console.log(suggestions)
             document.getElementById('investmentSuggestions').innerHTML = `
                 <h3>Investment Suggestions</h3>
@@ -431,69 +431,153 @@
         }
     }
 
-    function generateInvestmentSuggestions(data, newInvestment, minInvestmentAmount) {
-        // Filter companies with negative weight differences (only those that need investment)
-        const suggestionsData = data.filter(company => (company.normalizedWeight - company.weight) > 0);
+    function getUnderwrightedStocks(normalisedData, portfolioData, totalInvestment) {
+        return normalisedData.map(company => {
+        const portfolioCompany = portfolioData.find(p => p.symbol === company.symbol) || { weight: 0 };
+        const portfolioWeight = portfolioCompany.weight || 0;
 
-        // Sort companies by the largest negative difference (largest need for investment)
-        suggestionsData.sort((a, b) => (b.normalizedWeight - b.weight) - (a.normalizedWeight - a.weight));
+        // Calculate the difference as RON
+        const difference = ((portfolioWeight - company.normalizedWeight) / 100) * totalInvestment;
 
-        // Calculate the total difference for the companies that need investment
-        const totalDifference = suggestionsData.reduce((sum, company) => sum + (company.normalizedWeight - company.weight), 0);
+        console.log(`Symbol: ${company.symbol}, Portfolio Weight: ${portfolioWeight}, Normalized Weight: ${company.normalizedWeight}, Difference (RON): ${difference}`);
 
-        let remainingInvestment = newInvestment;
-        const suggestions = [];
-
-        // Allocate the total investment based on the largest negative difference
-        suggestionsData.forEach(company => {
-            const differencePercent = company.normalizedWeight - company.weight;
-            const proportionalInvestment = (differencePercent / totalDifference) * newInvestment;
-
-            // Ensure each company gets at least the minimum allowed investment
-            const investmentAmount = Math.max(proportionalInvestment, minInvestmentAmount);
-
-            remainingInvestment -= investmentAmount;
-
-            suggestions.push({
-                symbol: company.symbol,
-                amount: investmentAmount
-            });
-        });
-
-        // If there is remaining investment, distribute it among the companies
-        if (remainingInvestment > 0) {
-            // Sort the suggestions again to prioritize the most underweight companies
-            suggestions.sort((a, b) => {
-                const companyA = suggestionsData.find(company => company.symbol === a.symbol);
-                const companyB = suggestionsData.find(company => company.symbol === b.symbol);
-                return (companyB.normalizedWeight - companyB.weight) - (companyA.normalizedWeight - companyA.weight);
-            });
-
-            // Distribute the remaining investment to the companies
-            for (let i = 0; remainingInvestment > 0 && i < suggestions.length; i++) {
-                const currentAmount = suggestions[i].amount;
-                const adjustedAmount = Math.max(currentAmount + remainingInvestment, minInvestmentAmount);
-
-                suggestions[i].amount = adjustedAmount;
-                remainingInvestment -= (adjustedAmount - currentAmount);
-            }
-        }
-
-        // Ensure the total investment matches the new investment
-        const totalSuggested = suggestions.reduce((sum, suggestion) => sum + suggestion.amount, 0);
-        if (totalSuggested !== newInvestment) {
-            const difference = newInvestment - totalSuggested;
-            if (difference > 0) {
-                // Add the remaining difference to the first suggestion (most underweight)
-                suggestions[0].amount += difference;
-            } else if (difference < 0) {
-                // Reduce the excess from the first suggestion (most underweight)
-                suggestions[0].amount += difference;
-            }
-        }
-
-        return suggestions;
+        return {
+          symbol: company.symbol,
+          difference: difference // Store the difference in RON
+        };
+        }).filter(stock => stock.difference < 0);
     }
+
+
+    function generateInvestmentSuggestions(normalizedData, portfolioData, totalInvestment, newInvestment, minInvestmentAmount) {
+
+  // get stocks which are lower than the expected percentages
+  let underweightedStocks = getUnderwrightedStocks(normalizedData, portfolioData, totalInvestment);
+
+  // nothing to suggest in this case
+  if (underweightedStocks.length === 0) return []; // No stocks need an investment
+
+  // if I can suggest only for one stock, either the entire amount should go to it or at least until it reaches 0
+  if (underweightedStocks.length === 1) {
+    if (totalInvestment + underweightedStocks[0].difference > 0) {
+      return [
+        {
+          symbol: underweightedStocks[0].symbol,
+          amount: underweightedStocks[0].difference * -1
+        },
+        {
+          symbol: "other",
+          amount: totalInvestment + underweightedStocks[0].difference
+        }
+      ];
+    } else {
+      return [
+        {
+          symbol: underweightedStocks[0].symbol,
+          amount: totalInvestment
+        }
+      ];
+    }
+  }
+
+  // sorting them by the highest difference to the lowest
+  underweightedStocks.sort((a, b) => a.difference - b.difference); // Sort by the difference
+
+  // Set initial allocation for the first stock (the one with the highest difference)
+  let previousHigherStocks = 0;
+  let remainingInvestment = newInvestment;
+  for (let i = 0; i < underweightedStocks.length - 1; i++) {
+    if (remainingInvestment <= 0) {
+      return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
+    }
+
+    let firstHighestDiffStock = underweightedStocks[i].difference;
+    let secondHighestDiffStock = underweightedStocks[i + 1].difference;
+
+    let diffHighestToSecondHighest = secondHighestDiffStock - firstHighestDiffStock;
+
+    //cover case where verything goes to first stock
+    if(diffHighestToSecondHighest > remainingInvestment && i == 0) {
+      return  [
+        {
+          symbol: underweightedStocks[0].symbol,
+          amount: remainingInvestment
+        }
+      ]
+    }
+
+    //cover minimuminvestment
+    if (remainingInvestment < minInvestmentAmount * (previousHigherStocks + 1)) {
+      let amountForEachPrevHighestSymbol = remainingInvestment / previousHigherStocks;
+      for (let j = 0; j < i; j++) {
+        if (underweightedStocks[j].hasOwnProperty('amount')) {
+          underweightedStocks[j].amount += amountForEachPrevHighestSymbol;
+        } else {
+          underweightedStocks[j].amount = amountForEachPrevHighestSymbol;
+        }
+      }
+
+      return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
+    }
+
+    if (diffHighestToSecondHighest * previousHigherStocks > remainingInvestment) {
+      // this means everything needs to be allocated now to the previous values
+
+      // calculate amount to allocate to all
+      let amountForEachPrevHighestSymbol = remainingInvestment / (previousHigherStocks + 1);
+      for (let j = 0; j <= i; j++) {
+        if (underweightedStocks[j].hasOwnProperty('amount')) {
+          underweightedStocks[j].amount += amountForEachPrevHighestSymbol;
+        } else {
+          underweightedStocks[j].amount = amountForEachPrevHighestSymbol;
+        }
+      }
+
+      return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
+    } else {
+      for (let j = 0; j <= i; j++) {
+        if (underweightedStocks[j].hasOwnProperty('amount')) {
+          underweightedStocks[j].amount += diffHighestToSecondHighest;
+        } else {
+          underweightedStocks[j].amount = diffHighestToSecondHighest;
+        }
+      }
+      remainingInvestment -= diffHighestToSecondHighest * (previousHigherStocks + 1);
+    }
+
+    previousHigherStocks++;
+  }
+
+  //case where i still have remaining but i reached the end
+  if (remainingInvestment > 0) {
+    //vazut la cati se poarte impartii
+
+    let noOfCompaniesToSplitEquallyBetween = Math.floor(remainingInvestment / minInvestmentAmount);
+    if (noOfCompaniesToSplitEquallyBetween > underweightedStocks.length) {
+      let amountPerCompany = remainingInvestment / underweightedStocks.length;
+      for(let i=0; i<underweightedStocks.length; i++) {
+        if (underweightedStocks[i].hasOwnProperty('amount')) {
+          underweightedStocks[i].amount += amountPerCompany;
+        } else {
+          underweightedStocks[i].amount = amountPerCompany;
+        }
+      }
+    }  else {
+      let amountPerCompany = remainingInvestment / noOfCompaniesToSplitEquallyBetween;
+      for(let i=0; i<noOfCompaniesToSplitEquallyBetween ; i++) {
+        if (underweightedStocks[i].hasOwnProperty('amount')) {
+          underweightedStocks[i].amount += amountPerCompany;
+        } else {
+          underweightedStocks[i].amount = amountPerCompany;
+        }
+      }
+    }
+
+  }
+
+  return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
+}
+
 
 
 </script>
