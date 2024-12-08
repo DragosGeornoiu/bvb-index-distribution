@@ -1,0 +1,237 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    padding: 20px;
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.file-input {
+    margin-bottom: 20px;
+}
+
+.file-input label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.file-input .file-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.file-input input[type="file"] {
+    display: none;
+}
+
+.file-input .file-label {
+    background-color: #6c63ff;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.file-input .file-name {
+    margin-left: 10px;
+    font-size: 14px;
+    color: #333;
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.input-group, .toggle-container {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+input[type="number"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+}
+
+/* Custom Checkbox Styling */
+.toggle-container input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    width: 50px;
+    height: 25px;
+    border-radius: 30px;
+    background-color: #ccc;
+    position: relative;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+}
+
+.toggle-container input[type="checkbox"]:checked {
+    background-color: #6c63ff;
+}
+
+.toggle-container input[type="checkbox"]:before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: white;
+    transition: transform 0.3s ease;
+}
+
+.toggle-container input[type="checkbox"]:checked:before {
+    transform: translateX(25px);
+}
+
+/* Adjust label for better visual alignment */
+.toggle-container label {
+    margin-right: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #333;
+}
+
+button {
+    background-color: #6c63ff;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    width: 100%;
+}
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+}
+
+th, td {
+    padding: 10px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: #6c63ff;
+    color: white;
+}
+
+.positive-difference {
+    color: green;
+    font-weight: bold;
+}
+
+.negative-difference {
+    color: red;
+    font-weight: bold;
+}
+
+/* Layout and Spacing */
+.report-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Controls the spacing between #report and #investmentSuggestions */
+}
+
+#report {
+    margin-top: 30px;
+}
+
+#investmentSuggestions {
+    padding-top: 20px;
+}
+
+/* New Styling for Investment Suggestions */
+#investmentSuggestions h3 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+#investmentSuggestions .total-investment {
+    font-size: 20px;
+    color: #6c63ff;
+    font-weight: 600;
+    margin-bottom: 20px;
+    padding: 10px;
+    border-radius: 8px;
+    background-color: #f4f4f9;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+#investmentSuggestions ul {
+    list-style-type: none;
+    padding-left: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr; /* 3 columns */
+    gap: 20px;
+}
+
+#investmentSuggestions li {
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    font-size: 18px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+#investmentSuggestions li:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+#investmentSuggestions li .investment-amount {
+    font-size: 20px;
+    color: #6c63ff;
+    font-weight: bold;
+}
+
+#investmentSuggestions li .investment-symbol {
+    font-size: 16px;
+    color: #888;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 768px) {
+    #investmentSuggestions ul {
+        grid-template-columns: 1fr 1fr; /* 2 columns on small screens */
+    }
+}
+
+@media (max-width: 480px) {
+    #investmentSuggestions ul {
+        grid-template-columns: 1fr; /* 1 column on extra small screens */
+    }
+}
