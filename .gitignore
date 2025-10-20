@@ -1,0 +1,13 @@
+# JetBrains IDE files
+.idea/
+*.iml
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# CSVs (optional if you don't want them versioned)
+# input/bvb_distribution/*.csv
+
+# macOS files
+.DS_Store
