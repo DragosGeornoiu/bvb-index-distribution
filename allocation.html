@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Allocation History · BVB Index Distribution</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        .page-content { padding-top: 14px; }
+        .card { background:#fff; border:1px solid #ddd; border-radius:10px; padding:14px; margin-bottom:14px; }
+        .muted { color:#666; font-size:13px; }
+        .small { font-size:12px; }
+        label { font-weight:600; }
+        a { color:#6c63ff; text-decoration:none; }
+        a:hover { text-decoration:underline; }
+        code { background: rgba(0,0,0,.04); padding: 1px 6px; border-radius: 6px; }
+
+        /* Intro card */
+        .intro-title { font-weight:900; font-size:14px; margin-bottom:6px; }
+        .intro-text { font-size:13px; color:#444; line-height:1.5; }
+
+        /* Layout */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 220px 1fr 300px;
+            gap: 14px;
+            align-items: start;
+            margin-top: 0;
+        }
+        @media (max-width: 980px) { .controls-grid { grid-template-columns: 1fr; } }
+
+        select, button {
+            padding:10px 12px;
+            border-radius:8px;
+            border:1px solid #ccc;
+            background:#fff;
+            font-size:14px;
+            height: 40px;
+            box-sizing: border-box;
+        }
+
+        button {
+            cursor:pointer;
+            border:none;
+            background:#6c63ff;
+            color:#fff;
+            font-weight:700;
+            padding:10px 14px;
+            border-radius:8px;
+            height: 40px;
+        }
+        button.secondary {
+            background: rgba(108,99,255,.12);
+            color:#6c63ff;
+            border:1px solid rgba(108,99,255,.35);
+        }
+
+        .actions { display:flex; flex-direction:column; gap:10px; }
+        .actions-row { display:flex; gap:10px; flex-wrap:wrap; }
+        .actions-row button { min-width: 120px; }
+
+        .kpis { display:grid; gap:10px; }
+        .kpi {
+            display:flex; flex-direction:column; gap:4px;
+            padding:10px 12px;
+            border:1px solid rgba(0,0,0,.10);
+            border-radius:10px;
+            background: rgba(0,0,0,.03);
+        }
+        .kpi .k { font-size:12px; color:#666; }
+        .kpi .v { font-size:14px; font-weight:800; color:#222; }
+
+        .chips { display:flex; gap:8px; flex-wrap:wrap; }
+        .chip {
+            display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+            background: rgba(0,0,0,.05); border:1px solid rgba(0,0,0,.10); font-size:12px;
+            white-space: nowrap;
+        }
+        .chip b { font-weight:800; }
+        .pos { color:#137333; font-weight:800; }
+        .neg { color:#b42318; font-weight:800; }
+
+        .delta-row { margin-top: 12px; }
+        .delta-title { margin-bottom: 6px; }
+
+        /* Custom multiselect */
+        .ms { position: relative; }
+        .ms-control {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            user-select: none;
+            height: 40px;
+            box-sizing: border-box;
+        }
+        .ms-arrow { font-size: 12px; color: #666; }
+
+        .ms-dropdown {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            max-height: 320px;
+            overflow-y: auto;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 10px 22px rgba(0,0,0,0.14);
+            z-index: 20;
+            display: none;
+        }
+        .ms.open .ms-dropdown { display: block; }
+
+        .ms-actions {
+            position: sticky;
+            top: 0;
+            background: #fff;
+            border-bottom: 1px solid rgba(0,0,0,.08);
+            padding: 8px;
+            display:flex;
+            gap:8px;
+            z-index: 25;
+        }
+        .ms-action {
+            flex: 1;
+            height: 34px;
+            border-radius: 8px;
+            border: 1px solid rgba(108,99,255,.35);
+            background: rgba(108,99,255,.10);
+            color:#3a34a0;
+            font-weight:800;
+            cursor:pointer;
+            font-size: 13px;
+        }
+
+        .ms-list { padding: 6px 0; }
+
+        .ms-item {
+            display:flex;
+            align-items:center;
+            gap:10px;
+            padding: 10px 12px;
+            cursor:pointer;
+            font-size:14px;
+            user-select:none;
+        }
+        .ms-item:hover { background: rgba(108,99,255,0.08); }
+
+        .ms-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            border: 2px solid rgba(108,99,255,.55);
+            box-sizing: border-box;
+            flex: 0 0 auto;
+            background: transparent;
+        }
+        .ms-item.selected .ms-dot {
+            background: #6c63ff;
+            border-color: #6c63ff;
+        }
+        .ms-sym { font-weight: 700; color:#222; letter-spacing: .2px; }
+
+        .selchips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; margin-bottom: 6px; }
+        .selchip {
+            display:inline-flex; align-items:center; gap:8px;
+            padding:6px 10px; border-radius:999px;
+            background: rgba(108,99,255,.10);
+            border: 1px solid rgba(108,99,255,.25);
+            font-size:12px;
+            color:#3a34a0;
+            user-select:none;
+            cursor:pointer;
+            white-space: nowrap;
+        }
+        .selchip b { font-weight:800; }
+        .selchip .x { font-weight:900; opacity:.7; }
+
+        .status-row {
+            margin-top: 10px;
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 12px;
+            flex-wrap:wrap;
+        }
+        .error { color:#b42318; font-weight:700; }
+
+        /* Chart + overlay */
+        .chart-wrap {
+            position: relative;
+            height: 460px;
+        }
+        @media (max-width: 760px) { .chart-wrap { height: 380px; } }
+
+        .chart-overlay {
+            position:absolute;
+            inset:0;
+            display:none;
+            align-items:center;
+            justify-content:center;
+            text-align:center;
+            padding: 18px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.92);
+            z-index: 5;
+        }
+        .chart-overlay .msg {
+            font-weight: 800;
+            color:#333;
+            line-height: 1.4;
+        }
+        .chart-overlay .hint {
+            margin-top: 6px;
+            color:#666;
+            font-size: 13px;
+            font-weight: 500;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="top-nav">
+    <div class="top-nav-inner">
+        <div class="top-nav-title">BVB Index Distribution</div>
+        <div class="top-nav-tabs">
+            <a class="top-nav-tab" href="index.html">Tracker</a>
+            <a class="top-nav-tab" href="about.html">About</a>
+            <a class="top-nav-tab" href="data.html">Data Coverage</a>
+            <a class="top-nav-tab active" href="allocation.html">Allocation History</a>
+        </div>
+    </div>
+</div>
+
+<div class="container page-content">
+    <h2>Allocation History</h2>
+
+    <!-- Intro as separate card -->
+    <div class="card">
+        <div class="intro-title">What this page shows</div>
+        <div class="intro-text">
+            A time-series view of BET constituent weights. Use it to detect short-term rebalances
+            (e.g. a strong jump in <b>TLV</b> from one day to the next) and to compare longer-term trends across symbols.
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="card">
+        <div class="controls-grid">
+            <div>
+                <label for="rangeSelect">Time range</label>
+                <select id="rangeSelect" style="width:100%;">
+                    <option value="3" selected>Last 3 months</option>
+                    <option value="6">Last 6 months</option>
+                    <option value="12">Last 12 months</option>
+                    <option value="all">All available</option>
+                </select>
+            </div>
+
+            <div>
+                <label>Symbols</label>
+                <div class="ms" id="ms">
+                    <div class="ms-control" id="msControl">
+                        <span id="msLabel">Select symbols</span>
+                        <span class="ms-arrow">▾</span>
+                    </div>
+
+                    <div class="ms-dropdown" id="msDropdown">
+                        <div class="ms-actions">
+                            <button class="ms-action" id="selectAllBtn" type="button">Select all</button>
+                            <button class="ms-action" id="deselectAllBtn" type="button">Clear</button>
+                        </div>
+                        <div class="ms-list" id="msList"></div>
+                    </div>
+                </div>
+
+                <div class="selchips" id="selectedChips"></div>
+
+                <div class="muted small">
+                    Default picks the top 10 from the latest snapshot. Click chips to remove.
+                    You can also clear everything and pick a single symbol.
+                </div>
+            </div>
+
+            <div class="actions">
+                <div class="actions-row">
+                    <button id="reloadBtn" type="button">Reload</button>
+                    <button id="selectTopBtn" class="secondary" type="button">Top 10</button>
+                </div>
+
+                <div class="kpis">
+                    <div class="kpi">
+                        <div class="k">Snapshots loaded</div>
+                        <div class="v" id="snapshotsKpi">—</div>
+                    </div>
+                    <div class="kpi">
+                        <div class="k">Date range</div>
+                        <div class="v" id="rangeKpi">—</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delta section (no scroll; expands naturally) -->
+        <div class="delta-row">
+            <div class="muted small delta-title">Change from the previous snapshot (for selected symbols)</div>
+            <div class="chips" id="deltaChips"></div>
+        </div>
+
+        <div class="status-row">
+            <div id="status" class="muted"></div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card">
+        <div class="chart-wrap">
+            <div class="chart-overlay" id="chartOverlay">
+                <div>
+                    <div class="msg" id="chartOverlayMsg">No symbols selected.</div>
+                    <div class="hint">Open the Symbols dropdown and pick one or more symbols.</div>
+                </div>
+            </div>
+            <canvas id="chart"></canvas>
+        </div>
+    </div>
+
+    <!-- Data source -->
+    <div class="card">
+        <div class="muted">
+            Allocation history data:
+            <a href="https://github.com/DragosGeornoiu/bvb-index-distribution/tree/master/input/bvb_distribution" target="_blank" rel="noopener noreferrer">
+                https://github.com/DragosGeornoiu/bvb-index-distribution/tree/master/input/bvb_distribution
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    const OWNER = "dragosgeornoiu";
+    const REPO  = "bvb-index-distribution";
+    const BRANCH = "master";
+
+    const SNAPSHOT_DIR = "input/bvb_distribution";
+    const FILE_PREFIX = "bvb-companies-";
+    const FILE_SUFFIX = ".csv";
+
+    const rangeSelect = document.getElementById("rangeSelect");
+    const statusEl = document.getElementById("status");
+    const snapshotsKpi = document.getElementById("snapshotsKpi");
+    const rangeKpi = document.getElementById("rangeKpi");
+    const deltaChips = document.getElementById("deltaChips");
+
+    const reloadBtn = document.getElementById("reloadBtn");
+    const selectTopBtn = document.getElementById("selectTopBtn");
+
+    const ms = document.getElementById("ms");
+    const msControl = document.getElementById("msControl");
+    const msLabel = document.getElementById("msLabel");
+    const msList = document.getElementById("msList");
+    const selectedChipsEl = document.getElementById("selectedChips");
+
+    const selectAllBtn = document.getElementById("selectAllBtn");
+    const deselectAllBtn = document.getElementById("deselectAllBtn");
+
+    const chartOverlay = document.getElementById("chartOverlay");
+    const chartOverlayMsg = document.getElementById("chartOverlayMsg");
+
+    let selectedSymbols = new Set();
+
+    let chart = null;
+    let allSnapshots = [];
+    let allSymbols = [];
+
+    msControl.addEventListener("click", () => {
+        ms.classList.toggle("open");
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!ms.contains(e.target)) ms.classList.remove("open");
+    });
+
+    reloadBtn.addEventListener("click", () => init());
+
+    selectTopBtn.addEventListener("click", () => {
+        selectTopN(10);
+        renderChart();
+    });
+
+    rangeSelect.addEventListener("change", () => renderChart());
+
+    selectAllBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        selectAll();
+        renderChart();
+    });
+
+    deselectAllBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearSelection();
+        renderChart();
+    });
+
+    function showChartOverlay(message) {
+        chartOverlayMsg.textContent = message || "No symbols selected.";
+        chartOverlay.style.display = "flex";
+    }
+
+    function hideChartOverlay() {
+        chartOverlay.style.display = "none";
+    }
+
+    function setStatus(msg, isError=false) {
+        statusEl.className = isError ? "error" : "muted";
+        statusEl.textContent = msg;
+    }
+
+    function parseDateFromFilename(name) {
+        const m = name.match(/^bvb-companies-(\d{4}-\d{2}-\d{2})\.csv$/);
+        return m ? m[1] : null;
+    }
+
+    function daysInMonthsApprox(m) { return m * 31; }
+
+    function addDays(date, days) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+    }
+
+    function dateStrToDate(s) {
+        const [y, m, d] = s.split("-").map(Number);
+        return new Date(y, m - 1, d);
+    }
+
+    async function fetchSnapshotFileList() {
+        const apiUrl = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${SNAPSHOT_DIR}?ref=${BRANCH}`;
+        const resp = await fetch(apiUrl, { cache: "no-store" });
+        if (!resp.ok) throw new Error(`GitHub API failed: HTTP ${resp.status}`);
+        const json = await resp.json();
+        if (!Array.isArray(json)) throw new Error("Unexpected GitHub API response");
+        return json
+            .filter(x => x && x.type === "file" && typeof x.name === "string")
+            .map(x => x.name)
+            .filter(name => name.startsWith(FILE_PREFIX) && name.endsWith(FILE_SUFFIX))
+            .filter(name => name !== "bvb-companies-latest.csv");
+    }
+
+    function rawUrlFor(name) {
+        return `https://raw.githubusercontent.com/${OWNER}/${REPO}/${BRANCH}/${SNAPSHOT_DIR}/${name}`;
+    }
+
+    async function fetchCsv(url) {
+        const resp = await fetch(url, { cache: "no-store" });
+        if (!resp.ok) throw new Error(`CSV fetch failed: HTTP ${resp.status}`);
+        return await resp.text();
+    }
+
+    function parseWeightsCsv(csvText) {
+        const lines = String(csvText)
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l !== "" && !l.startsWith("#"));
+
+        if (lines.length === 0) return new Map();
+
+        const header = lines[0].split(",").map(s => s.trim().toLowerCase());
+        const symIdx = header.indexOf("symbol");
+        const wIdx = header.indexOf("weight");
+        if (symIdx === -1 || wIdx === -1) throw new Error("CSV missing symbol,weight headers");
+
+        const m = new Map();
+        for (let i = 1; i < lines.length; i++) {
+            const parts = lines[i].split(",").map(s => s.trim());
+            const sym = parts[symIdx];
+            const w = Number(parts[wIdx]);
+            if (!sym || !Number.isFinite(w)) continue;
+            m.set(sym, w);
+        }
+        return m;
+    }
+
+    function updateMsLabel() {
+        if (!selectedSymbols.size) msLabel.textContent = "Select symbols";
+        else msLabel.textContent = `${selectedSymbols.size} selected`;
+    }
+
+    function renderSelectedChips() {
+        selectedChipsEl.innerHTML = "";
+        const sel = Array.from(selectedSymbols);
+        if (!sel.length) return;
+
+        for (const sym of sel) {
+            const chip = document.createElement("span");
+            chip.className = "selchip";
+            chip.innerHTML = `<b>${sym}</b> <span class="x">×</span>`;
+            chip.title = "Remove";
+            chip.addEventListener("click", () => {
+                selectedSymbols.delete(sym);
+                syncDropdownSelectionUI();
+                updateMsLabel();
+                renderSelectedChips();
+                renderChart();
+            });
+            selectedChipsEl.appendChild(chip);
+        }
+    }
+
+    function fillSymbolSelect(symbols) {
+        msList.innerHTML = "";
+        selectedSymbols.clear();
+
+        for (const s of symbols) {
+            const row = document.createElement("div");
+            row.className = "ms-item";
+            row.dataset.sym = s;
+
+            const dot = document.createElement("span");
+            dot.className = "ms-dot";
+
+            const lbl = document.createElement("span");
+            lbl.className = "ms-sym";
+            lbl.textContent = s;
+
+            row.appendChild(dot);
+            row.appendChild(lbl);
+
+            row.addEventListener("click", () => {
+                if (selectedSymbols.has(s)) selectedSymbols.delete(s);
+                else selectedSymbols.add(s);
+
+                row.classList.toggle("selected", selectedSymbols.has(s));
+                updateMsLabel();
+                renderSelectedChips();
+                renderChart();
+            });
+
+            msList.appendChild(row);
+        }
+
+        updateMsLabel();
+        renderSelectedChips();
+    }
+
+    function syncDropdownSelectionUI() {
+        for (const row of msList.children) {
+            const sym = row.dataset.sym;
+            row.classList.toggle("selected", selectedSymbols.has(sym));
+        }
+    }
+
+    function selectTopN(n) {
+        selectedSymbols.clear();
+        for (const s of allSymbols.slice(0, n)) selectedSymbols.add(s);
+        syncDropdownSelectionUI();
+        updateMsLabel();
+        renderSelectedChips();
+    }
+
+    function selectAll() {
+        selectedSymbols.clear();
+        for (const s of allSymbols) selectedSymbols.add(s);
+        syncDropdownSelectionUI();
+        updateMsLabel();
+        renderSelectedChips();
+    }
+
+    function clearSelection() {
+        selectedSymbols.clear();
+        syncDropdownSelectionUI();
+        updateMsLabel();
+        renderSelectedChips();
+    }
+
+    function filterSnapshotsByRange(rangeValue) {
+        if (!allSnapshots.length) return [];
+        if (rangeValue === "all") return allSnapshots.slice();
+
+        const months = Number(rangeValue);
+        if (!Number.isFinite(months) || months <= 0) return allSnapshots.slice();
+
+        const lastDate = dateStrToDate(allSnapshots[allSnapshots.length - 1].dateStr);
+        const minDate = addDays(lastDate, -daysInMonthsApprox(months));
+        return allSnapshots.filter(s => dateStrToDate(s.dateStr) >= minDate);
+    }
+
+    function computeDeltasForChips(selectedSymbolsList, snapshots) {
+        deltaChips.innerHTML = "";
+        if (snapshots.length < 2) return;
+
+        const today = snapshots[snapshots.length - 1];
+        const yday  = snapshots[snapshots.length - 2];
+
+        for (const sym of selectedSymbolsList) {
+            const wToday = today.weights.get(sym);
+            const wYday  = yday.weights.get(sym);
+            if (!Number.isFinite(wToday) || !Number.isFinite(wYday)) continue;
+
+            const d = wToday - wYday;
+            const chip = document.createElement("span");
+            chip.className = "chip";
+            const cls = d >= 0 ? "pos" : "neg";
+            chip.innerHTML = `<b>${sym}</b> <span class="${cls}">${d >= 0 ? "+" : ""}${d.toFixed(2)}%</span> <span class="muted small">(${yday.dateStr} → ${today.dateStr})</span>`;
+            deltaChips.appendChild(chip);
+        }
+    }
+
+    function colorForIndex(i, n) {
+        const hue = Math.round((i * (360 / Math.max(1, n))) % 360);
+        return `hsl(${hue} 75% 45%)`;
+    }
+
+    function buildDatasets(selectedSymbolsList, snapshots) {
+        const n = selectedSymbolsList.length;
+        return selectedSymbolsList.map((sym, idx) => {
+            const c = colorForIndex(idx, n);
+            return {
+                label: sym,
+                data: snapshots.map(s => {
+                    const w = s.weights.get(sym);
+                    return Number.isFinite(w) ? w : null;
+                }),
+                spanGaps: true,
+                tension: 0.2,
+                borderColor: c,
+                backgroundColor: c,
+                pointRadius: 3,
+                pointHoverRadius: 5,
+                borderWidth: 2
+            };
+        });
+    }
+
+    function renderChart() {
+        if (!allSnapshots.length) return;
+
+        const snapshots = filterSnapshotsByRange(rangeSelect.value);
+        if (!snapshots.length) {
+            setStatus("No snapshots in selected range.", true);
+            return;
+        }
+
+        snapshotsKpi.textContent = String(snapshots.length);
+        rangeKpi.textContent = `${snapshots[0].dateStr} → ${snapshots[snapshots.length - 1].dateStr}`;
+
+        const selectedSymbolsList = Array.from(selectedSymbols);
+
+        if (!selectedSymbolsList.length) {
+            // show overlay + status, keep canvas area non-empty
+            if (chart) { chart.destroy(); chart = null; }
+            deltaChips.innerHTML = "";
+            showChartOverlay("No symbols selected.");
+            setStatus("No symbols selected. Open the dropdown and pick one or more symbols.");
+            return;
+        }
+
+        hideChartOverlay();
+
+        computeDeltasForChips(selectedSymbolsList, snapshots);
+
+        const labels = snapshots.map(s => s.dateStr);
+        const datasets = buildDatasets(selectedSymbolsList, snapshots);
+
+        if (chart) chart.destroy();
+
+        const ctx = document.getElementById("chart");
+        chart = new Chart(ctx, {
+            type: "line",
+            data: { labels, datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "nearest", intersect: false },
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { boxWidth: 8, boxHeight: 8, padding: 10 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => {
+                                const v = ctx.parsed.y;
+                                if (!Number.isFinite(v)) return `${ctx.dataset.label}: —`;
+                                return `${ctx.dataset.label}: ${v.toFixed(2)}%`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { title: { display: true, text: "Weight (%)" }, ticks: { callback: (v) => `${Number(v).toFixed(0)}%` } },
+                    x: { title: { display: true, text: "Date" } }
+                }
+            }
+        });
+
+        setStatus(`Loaded ${snapshots.length} snapshot(s). Select symbols and a range to explore changes.`);
+    }
+
+    async function init() {
+        try {
+            setStatus("Discovering available snapshots...");
+            snapshotsKpi.textContent = "—";
+            rangeKpi.textContent = "—";
+            deltaChips.innerHTML = "";
+            selectedChipsEl.innerHTML = "";
+            showChartOverlay("Loading data...");
+
+            const names = await fetchSnapshotFileList();
+            if (!names.length) {
+                setStatus("No daily snapshot files found in input/bvb_distribution.", true);
+                showChartOverlay("No data available.");
+                return;
+            }
+
+            const dated = names
+                .map(name => ({ name, dateStr: parseDateFromFilename(name) }))
+                .filter(x => x.dateStr)
+                .sort((a, b) => a.dateStr.localeCompare(b.dateStr));
+
+            setStatus(`Found ${dated.length} snapshot file(s). Downloading CSV data...`);
+
+            const snaps = [];
+            for (const f of dated) {
+                const url = rawUrlFor(f.name);
+                const text = await fetchCsv(url);
+                const weights = parseWeightsCsv(text);
+                snaps.push({ dateStr: f.dateStr, urlRaw: url, weights });
+            }
+            allSnapshots = snaps;
+
+            const latest = allSnapshots[allSnapshots.length - 1];
+            allSymbols = Array.from(latest.weights.entries())
+                .sort((a, b) => b[1] - a[1])
+                .map(([sym]) => sym);
+
+            fillSymbolSelect(allSymbols);
+
+            // Default: top 10 (but user can clear all)
+            selectTopN(10);
+            updateMsLabel();
+            renderSelectedChips();
+
+            renderChart();
+        } catch (e) {
+            console.error(e);
+            setStatus(`Failed to load snapshots: ${e.message}`, true);
+            showChartOverlay("Failed to load data.");
+            statusEl.innerHTML += `\n\nIf your default branch is not "${BRANCH}", update BRANCH in allocation.html.`;
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>

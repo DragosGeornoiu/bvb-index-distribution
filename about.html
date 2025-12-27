@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>About · BVB Index Distribution</title>
     <link rel="stylesheet" href="styles.css" />
+    <style>
+        .card h4 { margin-top: 0; }
+        pre { overflow:auto; }
+        code { background: rgba(0,0,0,.04); padding: 1px 6px; border-radius: 6px; }
+        .muted { color:#666; font-size:13px; }
+        .note { background: rgba(0,0,0,.03); border: 1px solid rgba(0,0,0,.08); padding: 10px 12px; border-radius: 10px; }
+        a { color:#6c63ff; text-decoration:none; }
+        a:hover { text-decoration:underline; }
+        .two-col { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+    </style>
 </head>
 <body>
 
@@ -15,6 +26,7 @@
             <a class="top-nav-tab" href="index.html">Tracker</a>
             <a class="top-nav-tab active" href="about.html">About</a>
             <a class="top-nav-tab" href="data.html">Data Coverage</a>
+            <a class="top-nav-tab" href="allocation.html">Allocation History</a>
         </div>
     </div>
 </div>
@@ -24,147 +36,219 @@
 
     <div class="card">
         <p>
-            This tool compares a personal BVB portfolio against the BET index distribution
-            and (optionally) suggests how to invest available cash to move the portfolio closer to the index —
-            using <b>buy-only</b> allocations (no selling).
+            This project compares a personal BVB portfolio against the <b>BET</b> index distribution and suggests how to invest
+            available cash to move the portfolio closer to the index — using <b>buy-only</b> allocations (no selling).
         </p>
         <p class="muted">
-            Notes: This is a personal tracking tool. Index weights and commission tiers are best-effort snapshots.
-            Nothing here is financial advice.
+            Everything runs as a static GitHub Pages app: no backend, no database. Data is loaded directly from the repository
+            (CSV + JSON snapshots) and computed in the browser.
         </p>
     </div>
 
-    <h3>How data is loaded</h3>
+    <h3>Pages</h3>
     <div class="card">
         <ul>
-            <li><b>BET weights</b> are loaded from a daily-scraped CSV committed by a GitHub Action.</li>
-            <li><b>Your portfolio</b> can be imported via CSV upload or via TradeVille copy/paste.</li>
-            <li><b>CASH_VALUE</b> represents available cash and is excluded from portfolio weights.</li>
-            <li><b>Market prices</b> are required for investment suggestions (whole shares).</li>
+            <li><b>Tracker</b> (<code>index.html</code>): portfolio import + comparison vs BET + buy-only suggestions.</li>
+            <li><b>Allocation History</b> (<code>allocation.html</code>): a time-series chart showing how BET weights shift daily.</li>
+            <li><b>Data Coverage</b> (<code>data.html</code>): calendar overview of available daily snapshots.</li>
         </ul>
+    </div>
+
+    <h3>Technical overview</h3>
+    <div class="card">
+        <div class="two-col">
+            <div>
+                <h4>Stack</h4>
+                <ul>
+                    <li><b>Frontend</b>: HTML + CSS + vanilla JavaScript (no framework).</li>
+                    <li><b>Charts</b>: Chart.js (CDN) for Allocation History.</li>
+                    <li><b>Hosting</b>: GitHub Pages (static site).</li>
+                    <li><b>Automation</b>: GitHub Actions for daily scraping.</li>
+                    <li><b>Scraper</b>: Python script (<code>scripts/scrape_bvb.py</code>).</li>
+                </ul>
+            </div>
+            <div>
+                <h4>Data flow</h4>
+                <ul>
+                    <li>The app reads CSV/JSON directly from the repo (static snapshots).</li>
+                    <li>A GitHub Action runs daily, fetches fresh BET weights, and commits a new snapshot file.</li>
+                    <li>The UI always uses the latest committed snapshot (deterministic + reproducible).</li>
+                    <li>The Allocation History page lists daily CSVs via the GitHub Contents API and loads them from raw GitHub URLs.</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="note" style="margin-top:12px;">
+            <b>Why static snapshots?</b><br/>
+            It ensures the app works without a backend and can reproduce results for any past day by using the committed files.
+            It also avoids rate limits and availability issues of querying live sources from the browser.
+        </div>
+    </div>
+
+    <h3>Index data (BET weights)</h3>
+    <div class="card">
+        <p>
+            BET weights are stored as daily CSV snapshots under <code>input/bvb_distribution/</code>.
+            A separate process (GitHub Actions + Python) fetches the data once per day and commits:
+        </p>
+        <ul>
+            <li><code>input/bvb_distribution/bvb-companies-YYYY-MM-DD.csv</code></li>
+            <li><code>input/bvb_distribution/bvb-companies-latest.csv</code></li>
+        </ul>
+
+        <p>CSV format example:</p>
+        <pre><code>symbol,weight
+TLV,19.92
+SNP,18.59
+SNG,11.59
+H2O,11.39
+...</code></pre>
+
+        <p class="muted">
+            The app normalizes weights to 100% for the selected universe (symbols present in the snapshot),
+            then uses these normalized weights as the target.
+        </p>
+    </div>
+
+    <h3>Allocation History (time-series)</h3>
+    <div class="card">
+        <p>
+            The Allocation History page visualizes how index weights change across the daily snapshots.
+            By default it loads the last 3 months (or all available if fewer).
+        </p>
+        <ul>
+            <li>Multi-select symbols, including Select All / Clear.</li>
+            <li>Shows day-to-day delta per selected symbol (previous snapshot → latest snapshot in range).</li>
+            <li>Uses distinct colors to keep series readable.</li>
+        </ul>
+
+        <p class="muted">
+            Data is loaded directly from the repository using GitHub’s Contents API (file list) + raw GitHub URLs (CSV content).
+        </p>
     </div>
 
     <h3>Portfolio input formats</h3>
 
     <div class="card">
         <h4>1) Portfolio CSV upload</h4>
-        <p>Upload a CSV file with the following format:</p>
+        <p>Upload a CSV with the following format:</p>
 
-        <pre><code>symbol,value,market_price
-SNP,126506.66,0.9855
-TLV,122179.18,30.34
-SNG,77051.70,9.90
+        <pre><code>symbol,value
+SNP,126506.66
+TLV,122179.18
+SNG,77051.70
+H2O,75628.80
+BRD,45400.00
 ...
-CASH_VALUE,12023.80,</code></pre>
+CASH_VALUE,12023.80</code></pre>
 
         <ul>
-            <li><b>symbol</b> — BVB ticker</li>
-            <li><b>value</b> — current position value (RON), not percentage</li>
-            <li><b>market_price</b> — current market price (RON / share). Full precision is preserved (no rounding).</li>
-            <li><b>CASH_VALUE</b> — available cash row (optional). Leave market_price empty.</li>
+            <li><b>symbol</b> — BVB ticker (e.g. SNP, TLV).</li>
+            <li><b>value</b> — current position value (not percent).</li>
+            <li><b>CASH_VALUE</b> — optional available cash; excluded from weight calculations.</li>
         </ul>
+
+        <p class="muted">
+            Currency is not enforced; calculations assume all values are in the same currency.
+        </p>
     </div>
 
     <div class="card">
         <h4>2) TradeVille copy / paste import</h4>
         <p>
-            You can paste your portfolio table directly from TradeVille.
-            The parser is intentionally tolerant and ignores extra text.
+            You can paste the TradeVille portfolio table directly. The parser is intentionally tolerant:
+            it ignores headers and extra text, and extracts instrument rows it can safely parse.
         </p>
 
-        <p>Supported pasted content includes:</p>
-        <ul>
-            <li>Table headers</li>
-            <li>Extra rows before or after the table</li>
-            <li>“Total active”, “Total Portofoliu”, and similar summary rows</li>
-        </ul>
-
-        <p>Example (direct copy from TradeVille):</p>
-
-        <pre><code>simbol      ...   sold   Pret piata   ...   evaluare   ...
-SNP         ...   128,368 0.9855      ...   126,506.66 ...
-TLV         ...   4,027   30.34       ...   122,179.18 ...
+        <p>Example (realistic TradeVille paste):</p>
+        <pre><code>Instrumente BVB in RON
+simbol    Nume                       sold     Pret piata   evaluare      Pondere
+SNP       OMV Petrom                 128,368  0.9855       126,506.66    20.54%
+TLV       Banca Transilvania         4,027    30.34        122,179.18    19.84%
+SNG       S.n.g.n. Romgaz            7,783    9.90         77,051.70     12.51%
+H2O       Hidroelectrica             606      124.8        75,628.80     12.28%
 ...
-RON         ...   12,023.80</code></pre>
+RON       RON                        12,023.80</code></pre>
 
-        <p>The app automatically:</p>
         <ul>
-            <li>extracts <b>symbol</b>, <b>evaluare</b> (value), and <b>Pret piata</b> (market_price)</li>
-            <li>detects the <b>RON</b> cash row and maps it to <b>CASH_VALUE</b></li>
-            <li>ignores rows it cannot safely parse</li>
+            <li>Extracts <b>symbol</b> + <b>evaluare</b> for each instrument.</li>
+            <li>Detects the <b>RON</b> row and maps it to <b>CASH_VALUE</b>.</li>
+            <li>Ignores “Total …” summary rows and anything that cannot be parsed safely.</li>
         </ul>
     </div>
 
-    <h3>Tables and columns</h3>
+    <h3>Tracker calculations</h3>
     <div class="card">
-        <h4>1) Portfolio Comparison</h4>
-        <p>
-            This table compares your current portfolio weights against the index.
-            Index weights are normalized to 100% within the chosen universe.
-        </p>
+        <h4>1) Portfolio weights</h4>
         <ul>
-            <li><b>Symbol</b> — BVB ticker</li>
-            <li><b>BVB Weight</b> — raw index weight from the snapshot</li>
-            <li><b>Normalized BVB Weight</b> — re-scaled to 100% (especially when using “Only consider companies in my portfolio”)</li>
-            <li><b>Portfolio Weight</b> — based on stocks-only portfolio total (CASH_VALUE excluded)</li>
-            <li><b>Difference (Val and %)</b> — value difference in RON and percentage points</li>
+            <li>Portfolio weight per symbol is computed from instrument values only.</li>
+            <li><code>CASH_VALUE</code> is excluded from weights (cash is a budget, not an index constituent).</li>
         </ul>
 
+        <h4>2) Index weights</h4>
+        <ul>
+            <li>Index weights are loaded from the latest snapshot CSV.</li>
+            <li>Weights are normalized to 100% for the available symbols in the snapshot.</li>
+        </ul>
+
+        <h4>3) Differences table</h4>
         <p class="muted">
-            Sanity check: the sum of value differences should be ~0 (small floating-point error is expected).
-        </p>
-
-        <h4 style="margin-top:14px;">2) Portfolio after applying suggestions</h4>
-        <p>
-            After suggestions are generated, a second table simulates the portfolio after applying them (gross invested only).
-            Fees are not added to holdings (fees are costs, not assets).
+            The main table shows both:
         </p>
         <ul>
-            <li><b>Normalized BVB Weight</b> — same target as above</li>
-            <li><b>New Portfolio Weight</b> — weights after adding suggested gross investments</li>
-            <li><b>New Difference (Val and %)</b> — post-suggestion deviation from target</li>
+            <li><b>Difference (%)</b>: portfolio weight − normalized index weight.</li>
+            <li><b>Difference (value)</b>: the value delta needed to match the target weights (based on total invested value).</li>
         </ul>
     </div>
 
-    <h3>Investment suggestions algorithm</h3>
+    <h3>Buy-only suggestion algorithm (with fees)</h3>
     <div class="card">
         <p>
-            Suggestions are computed using market prices and whole shares (no fractional shares).
-            The algorithm is fee-aware and buy-only.
+            When <b>Enable New Investment</b> is ON, the app proposes buy-only allocations that aim to reduce deviation from the index,
+            while respecting real trading constraints.
         </p>
 
         <h4>Constraints</h4>
         <ul>
-            <li><b>Budget</b>: total cost (gross + estimated fees) never exceeds available cash</li>
-            <li><b>Whole shares</b>: buys are integer shares only</li>
-            <li><b>Minimum per stock</b>: when a new symbol is introduced in suggestions, it must be able to reach the minimum gross investment (e.g. 500 RON) within remaining cash</li>
-            <li><b>Fees</b>: estimated using a tier snapshot (variable % + fixed fee once per symbol)</li>
+            <li><b>Budget</b>: total spend cannot exceed available cash.</li>
+            <li><b>Whole shares</b>: all orders are integer shares.</li>
+            <li><b>Minimum per symbol</b>: suggested total per symbol must be ≥ user-configured minimum (otherwise that symbol is skipped).</li>
+            <li><b>Fees</b>: each order includes an estimated fee = variable commission + fixed component (tier-based).</li>
+            <li><b>No rounding in UI</b> for prices/shares in calculations (decimals are preserved).</li>
         </ul>
 
-        <h4>Optimization strategy</h4>
-        <ul>
-            <li><b>Step 1 (tracking)</b>: repeatedly add the single share that most improves index tracking
-                (minimizes total squared error across all symbols), while staying within budget.</li>
-            <li><b>Step 2 (spend remaining cash)</b>: if cash remains, continue buying the “least harmful” next share
-                to spend as much as possible while keeping tracking close.</li>
-        </ul>
+        <h4>High-level approach</h4>
+        <ol>
+            <li>Compute target value per symbol from normalized index weights and current portfolio total.</li>
+            <li>Compute “underweight” symbols (those below target).</li>
+            <li>Allocate budget iteratively:
+                <ul>
+                    <li>Start from most underweight.</li>
+                    <li>Propose a feasible order: whole shares at market price + estimated fee.</li>
+                    <li>Respect minimum-per-symbol and remaining cash.</li>
+                    <li>After initial pass, spend remaining cash to further reduce deviation (even if improvement is small),
+                        while still respecting min-per-symbol and fees.</li>
+                </ul>
+            </li>
+            <li>Show results as:
+                <ul>
+                    <li>“Investment Suggestions” cards (per symbol: shares × price + fee).</li>
+                    <li>“Portfolio after applying suggestions” table to validate the new weights/differences.</li>
+                </ul>
+            </li>
+        </ol>
 
-        <p class="muted">
-            Prices are not rounded in the UI to avoid misleading share-cost math (e.g. 0.9855 must stay 0.9855).
-        </p>
+        <div class="note">
+            <b>Note:</b> Fees are estimates and stored as a static snapshot (for reproducibility).
+            The tier selection is based on total portfolio value (stocks + cash) and uses the best available snapshot in the repo.
+        </div>
     </div>
 
-    <h3>Index data format</h3>
+    <h3>Disclaimer</h3>
     <div class="card">
-        <p>Index weights are loaded from a daily-generated CSV:</p>
-
-        <pre><code>symbol,weight
-TLV,19.30
-SNP,19.03
-...</code></pre>
-
-        <p class="muted">
-            When “Only consider companies in my portfolio” is enabled, these weights are normalized over your portfolio symbols.
+        <p>
+            This tool is for personal tracking and convenience only. It does not provide financial advice.
+            Always verify orders, prices, and fees in your broker before trading.
         </p>
     </div>
 </div>
