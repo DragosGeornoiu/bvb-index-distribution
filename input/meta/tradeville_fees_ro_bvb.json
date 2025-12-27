@@ -1,0 +1,55 @@
+{
+  "updated_at_utc": "2025-12-22T00:00:00Z",
+  "source": "Manual snapshot from TradeVille fees page (BVB only)",
+  "market": "BVB",
+  "tiers": [
+    {
+      "name": "PLATINUM",
+      "threshold_eur_min": 400000,
+      "fee_percent": 0.30,
+      "fixed_fee_eur": 0.30,
+      "intraday_fee_percent": 0.20,
+      "intraday_fixed_fee_eur": 0.30
+    },
+    {
+      "name": "GOLD",
+      "threshold_eur_min": 300000,
+      "fee_percent": 0.35,
+      "fixed_fee_eur": 0.30,
+      "intraday_fee_percent": 0.22,
+      "intraday_fixed_fee_eur": 0.30
+    },
+    {
+      "name": "SILVER",
+      "threshold_eur_min": 200000,
+      "fee_percent": 0.39,
+      "fixed_fee_eur": 0.30,
+      "intraday_fee_percent": 0.25,
+      "intraday_fixed_fee_eur": 0.30
+    },
+    {
+      "name": "BRONZE",
+      "threshold_eur_min": 100000,
+      "fee_percent": 0.41,
+      "fixed_fee_eur": 0.30,
+      "intraday_fee_percent": 0.33,
+      "intraday_fixed_fee_eur": 0.30
+    },
+    {
+      "name": "STANDARD",
+      "threshold_eur_min": 0,
+      "fee_percent": 0.43,
+      "fixed_fee_eur": 0.30,
+      "intraday_fee_percent": 0.35,
+      "intraday_fixed_fee_eur": 0.30
+    }
+  ],
+  "tier_rules_used_for_auto_selection": [
+    { "name": "PLATINUM", "threshold_eur_min": 400000 },
+    { "name": "GOLD", "threshold_eur_min": 300000 },
+    { "name": "SILVER", "threshold_eur_min": 200000 },
+    { "name": "BRONZE", "threshold_eur_min": 100000 },
+    { "name": "STANDARD", "threshold_eur_min": 0 }
+  ],
+  "note": "Fees are stored as a static snapshot and are not updated automatically."
+}

@@ -30,6 +30,40 @@
         <div class="muted">Status: <span id="status">Loading…</span></div>
     </div>
 
+    <!-- Static meta sources -->
+    <div class="card">
+        <h3 style="margin-top:0;">Static meta (manual snapshot)</h3>
+
+        <div class="summary-grid">
+            <div>
+                <div class="muted">EUR/RON (fixed)</div>
+                <div id="eurRonValue" class="summary-value">—</div>
+                <div class="muted" style="margin-top:6px;">Updated at</div>
+                <div id="eurRonUpdated" class="summary-value" style="font-size:14px;">—</div>
+                <div class="muted" style="margin-top:10px;">
+                    <a id="eurRonDownload" href="#" download>Download JSON</a>
+                </div>
+            </div>
+
+            <div>
+                <div class="muted">Tradeville fees (BVB)</div>
+                <div id="tvFeesStatus" class="summary-value">—</div>
+                <div class="muted" style="margin-top:6px;">Updated at</div>
+                <div id="tvFeesUpdated" class="summary-value" style="font-size:14px;">—</div>
+                <div class="muted" style="margin-top:10px;">
+                    <a id="tvFeesDownload" href="#" download>Download JSON</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="muted" style="margin-top:12px;">
+            These values are stored in <code>input/meta</code> and are not updated automatically.
+        </div>
+
+        <div id="tvFeesPreview" style="margin-top:14px;"></div>
+    </div>
+
+    <!-- Index data status -->
     <div class="card">
         <h3 style="margin-top:0;">Index data status</h3>
         <div class="summary-grid">
@@ -44,6 +78,7 @@
         </div>
     </div>
 
+    <!-- Calendar -->
     <div class="card">
         <h3 style="margin-top:0;">Coverage calendar</h3>
         <div id="calendar" class="coverage-calendar"></div>
@@ -55,7 +90,7 @@
             </div>
             <div class="coverage-legend-item">
                 <span class="coverage-box" style="background:#d73a49;border-color:#d73a49;"></span>
-                <span class="muted">missing (past day)</span>
+                <span class="muted">missing (past day, tracked)</span>
             </div>
             <div class="coverage-legend-item">
                 <span class="coverage-box" style="background:#d0d7de;border-color:#d0d7de;"></span>
@@ -64,6 +99,7 @@
         </div>
     </div>
 
+    <!-- Summary -->
     <div class="card">
         <h3 style="margin-top:0;">Summary</h3>
         <div class="summary-grid">
@@ -74,11 +110,13 @@
         </div>
     </div>
 
+    <!-- Missing days -->
     <div class="card">
         <h3 style="margin-top:0;">Missing days</h3>
         <div id="missingDays" class="muted">—</div>
     </div>
 
+    <!-- Files -->
     <div class="card">
         <h3 style="margin-top:0;">All snapshots</h3>
         <div id="fileList" class="file-list muted">—</div>
@@ -90,11 +128,6 @@
     const REPO = "bvb-index-distribution";
     const FOLDER_PATH = "input/bvb_distribution";
     const FILE_REGEX = /^bvb-companies-(\d{4})-(\d{2})-(\d{2})\.csv$/;
-
-    // Keep columns equal-width, regardless of month label presence
-    const CELL_PX = 14;
-    const COL_PX = 28;
-    const V_GAP_PX = 3;
 
     const statusEl = document.getElementById("status");
     const calendarEl = document.getElementById("calendar");
@@ -109,46 +142,61 @@
     const statusLastDateEl = document.getElementById("statusLastDate");
     const coverageStatusEl = document.getElementById("coverageStatus");
 
-    function isoDate(d) {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, "0");
-        const day = String(d.getDate()).padStart(2, "0");
-        return `${y}-${m}-${day}`;
+    const eurRonValueEl = document.getElementById("eurRonValue");
+    const eurRonUpdatedEl = document.getElementById("eurRonUpdated");
+    const eurRonDownloadEl = document.getElementById("eurRonDownload");
+
+    const tvFeesStatusEl = document.getElementById("tvFeesStatus");
+    const tvFeesUpdatedEl = document.getElementById("tvFeesUpdated");
+    const tvFeesDownloadEl = document.getElementById("tvFeesDownload");
+    const tvFeesPreviewEl = document.getElementById("tvFeesPreview");
+
+    // --------- UTC-safe date helpers (avoid timezone shifting) ---------
+    function pad2(n) { return String(n).padStart(2, "0"); }
+
+    function isoDateUTC(d) {
+        return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
     }
 
-    function parseISODate(s) {
+    function parseISODateUTC(s) {
         const [y, m, d] = s.split("-").map(Number);
-        return new Date(y, m - 1, d);
+        return new Date(Date.UTC(y, m - 1, d));
     }
 
-    function addDays(d, n) {
-        const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        x.setDate(x.getDate() + n);
+    function addDaysUTC(d, n) {
+        const x = new Date(d);
+        x.setUTCDate(x.getUTCDate() + n);
         return x;
     }
 
-    function startOfWeekMonday(d) {
-        const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-        const day = (x.getDay() + 6) % 7;
-        return addDays(x, -day);
+    function utcMidnightNow() {
+        const now = new Date();
+        return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     }
 
-    function firstOfMonth(d) {
-        return new Date(d.getFullYear(), d.getMonth(), 1);
+    function startOfWeekMondayUTC(d) {
+        const x = new Date(d);
+        const day = (x.getUTCDay() + 6) % 7; // Mon=0
+        return addDaysUTC(x, -day);
     }
 
-    function endOfMonth(d) {
-        return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    function firstOfMonthUTC(d) {
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+    }
+
+    function endOfMonthUTC(d) {
+        return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
     }
 
     function monthShortName(m) {
         return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m];
     }
 
-    function daysBetween(a, b) {
+    function daysBetweenUTC(a, b) {
         const ms = 24 * 60 * 60 * 1000;
         return Math.floor((b - a) / ms);
     }
+    // ------------------------------------------------------------------
 
     async function loadFolderListing() {
         const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER_PATH}`;
@@ -160,7 +208,6 @@
     function extractDates(files) {
         const dates = [];
         const fileByDate = new Map();
-
         for (const f of files) {
             const m = f.name.match(FILE_REGEX);
             if (!m) continue;
@@ -168,24 +215,22 @@
             dates.push(dateStr);
             fileByDate.set(dateStr, f.html_url);
         }
-
         dates.sort();
         return { dates, fileByDate };
     }
 
-    function computeMissing(dates, todayISO) {
+    function computeMissing(dates) {
         if (dates.length === 0) return [];
 
         const present = new Set(dates);
-        const first = parseISODate(dates[0]);
-        const today = parseISODate(todayISO);
-        const missing = [];
+        const first = parseISODateUTC(dates[0]);
+        const today = utcMidnightNow();
 
-        for (let d = new Date(first); d < today; d = addDays(d, 1)) {
-            const key = isoDate(d);
+        const missing = [];
+        for (let d = new Date(first); d < today; d = addDaysUTC(d, 1)) {
+            const key = isoDateUTC(d);
             if (!present.has(key)) missing.push(key);
         }
-
         return missing;
     }
 
@@ -196,9 +241,9 @@
             return;
         }
 
-        const last = parseISODate(dates[dates.length - 1]);
-        const today = new Date();
-        const daysSinceLast = daysBetween(last, today);
+        const last = parseISODateUTC(dates[dates.length - 1]);
+        const today = utcMidnightNow();
+        const daysSinceLast = daysBetweenUTC(last, today);
 
         if (missing.length > 0) {
             coverageStatusEl.textContent = "Missing past days detected";
@@ -212,162 +257,171 @@
         }
     }
 
-    function monthLabelForWeek(weekStartMonday) {
-        for (let i = 0; i < 7; i++) {
-            const d = addDays(weekStartMonday, i);
-            if (d.getDate() === 1) return monthShortName(d.getMonth());
-        }
-        return "";
-    }
-
     function renderCalendar(dates) {
         calendarEl.innerHTML = "";
         if (dates.length === 0) return;
 
         const present = new Set(dates);
-        const firstSnapshot = parseISODate(dates[0]);
-        const today = new Date();
-        const todayISO = isoDate(today);
+        const firstSnapshot = parseISODateUTC(dates[0]);
+        const today = utcMidnightNow();
 
-        const startMonth = firstOfMonth(firstSnapshot);
-        const endMonth = endOfMonth(today);
+        const startMonth = firstOfMonthUTC(firstSnapshot);
+        const endMonth = endOfMonthUTC(today);
 
-        const gridStart = startOfWeekMonday(startMonth);
-        const gridEnd = addDays(startOfWeekMonday(endMonth), 6);
+        const gridStart = startOfWeekMondayUTC(startMonth);
+        const gridEnd = addDaysUTC(startOfWeekMondayUTC(endMonth), 6);
 
         const weeks = [];
-        for (let d = new Date(gridStart); d <= gridEnd; d = addDays(d, 7)) {
-            weeks.push(new Date(d));
-        }
+        for (let d = new Date(gridStart); d <= gridEnd; d = addDaysUTC(d, 7)) weeks.push(new Date(d));
 
         const grid = document.createElement("div");
         grid.className = "coverage-grid";
-
-        // Keep your original row label column (this is part of the "nice" look)
-        const labels = document.createElement("div");
-        labels.className = "coverage-row-labels";
-        labels.innerHTML = `
-      <div class="muted">Mon</div>
-      <div class="muted"></div>
-      <div class="muted">Wed</div>
-      <div class="muted"></div>
-      <div class="muted">Fri</div>
-      <div class="muted"></div>
-      <div class="muted">Sun</div>
-    `;
-
         const columns = document.createElement("div");
         columns.className = "coverage-columns";
+
+        let lastMonth = null;
 
         for (const wStart of weeks) {
             const col = document.createElement("div");
             col.className = "coverage-week";
 
-            // Force equal width per week column
-            col.style.width = `${COL_PX}px`;
-            col.style.minWidth = `${COL_PX}px`;
-            col.style.maxWidth = `${COL_PX}px`;
-
-            // Month label (reserve identical width for all columns)
-            const label = monthLabelForWeek(wStart);
+            const month = wStart.getUTCMonth();
             const monthEl = document.createElement("div");
             monthEl.className = "coverage-month";
-            monthEl.textContent = label || "   ";
-            monthEl.style.width = `${COL_PX}px`;
-            monthEl.style.minWidth = `${COL_PX}px`;
-            monthEl.style.maxWidth = `${COL_PX}px`;
-            monthEl.style.height = "16px";
-            monthEl.style.lineHeight = "16px";
-            monthEl.style.textAlign = "center";
-            monthEl.style.whiteSpace = "nowrap";
+            monthEl.textContent = (month !== lastMonth) ? monthShortName(month) : "\u00A0";
+            lastMonth = month;
             col.appendChild(monthEl);
 
-            // Day cells
             for (let i = 0; i < 7; i++) {
-                const day = addDays(wStart, i);
-                const key = isoDate(day);
-
+                const day = addDaysUTC(wStart, i);
+                const key = isoDateUTC(day);
                 const cell = document.createElement("div");
-                cell.style.width = `${CELL_PX}px`;
-                cell.style.height = `${CELL_PX}px`;
-                cell.style.marginBottom = `${V_GAP_PX}px`; // ✅ restore vertical rhythm
-                cell.style.boxSizing = "border-box";       // avoids size creep
 
-                if (present.has(key)) {
-                    cell.className = "coverage-cell level-present";
-                    cell.title = `${key} (present)`;
-                } else if (day < firstSnapshot) {
-                    cell.className = "coverage-cell level-future";
-                    cell.title = `${key} (not tracked yet)`;
-                } else if (key < todayISO) {
-                    cell.className = "coverage-cell level-missing";
-                    cell.title = `${key} (missing)`;
-                } else {
-                    cell.className = "coverage-cell level-future";
-                    cell.title = `${key} (future)`;
-                }
+                if (day < firstSnapshot) cell.className = "coverage-cell level-future";
+                else if (present.has(key)) cell.className = "coverage-cell level-present";
+                else if (day < today) cell.className = "coverage-cell level-missing";
+                else cell.className = "coverage-cell level-future";
 
+                cell.title = key;
                 col.appendChild(cell);
             }
 
             columns.appendChild(col);
         }
 
-        grid.appendChild(labels);
         grid.appendChild(columns);
         calendarEl.appendChild(grid);
     }
 
+    function renderFileList(dates, fileByDate) {
+        fileListEl.innerHTML = dates.slice().reverse().map(d =>
+            `<div>• <a href="${fileByDate.get(d)}" target="_blank" rel="noopener noreferrer">${d}</a></div>`
+        ).join("");
+    }
+
     function renderMissing(missing) {
-        if (!missing || missing.length === 0) {
-            missingDaysEl.innerHTML = `<span class="coverage-ok">No missing days detected ✅</span>`;
+        if (!missing.length) {
+            missingDaysEl.innerHTML = `<span style="color:#2ea043;font-weight:600;">No missing days detected ✅</span>`;
             return;
         }
         missingDaysEl.innerHTML = missing.map(d => `<div>${d}</div>`).join("");
     }
 
-    function renderFileList(dates, fileByDate) {
-        if (!dates.length) {
-            fileListEl.textContent = "No snapshot files found yet.";
+    async function loadMetaJson(path) {
+        const resp = await fetch(path, { cache: "no-store" });
+        if (!resp.ok) throw new Error(`Failed to load ${path}: ${resp.status}`);
+        return await resp.json();
+    }
+
+    function renderFeesPreview(fees) {
+        if (!fees || !Array.isArray(fees.tiers)) {
+            tvFeesPreviewEl.innerHTML = `<div class="muted">No fee details available.</div>`;
             return;
         }
 
-        fileListEl.innerHTML = dates
-            .slice()
-            .reverse()
-            .map(d => `<div>• <a href="${fileByDate.get(d)}" target="_blank" rel="noopener noreferrer">${d}</a></div>`)
-            .join("");
+        const rows = fees.tiers.map(t => {
+            const thr = (t.threshold_eur_min === null || t.threshold_eur_min === undefined)
+                ? "—"
+                : `${Number(t.threshold_eur_min).toLocaleString()} EUR+`;
+
+            const main = `${t.fee_percent.toFixed(2)}% + €${t.fixed_fee_eur.toFixed(2)}`;
+            const intra = `${t.intraday_fee_percent.toFixed(2)}% + €${t.intraday_fixed_fee_eur.toFixed(2)}`;
+
+            return `<tr>
+                <td style="font-weight:600;">${t.name}</td>
+                <td>${thr}</td>
+                <td>${main}</td>
+                <td>${intra}</td>
+            </tr>`;
+        }).join("");
+
+        tvFeesPreviewEl.innerHTML = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>Threshold</th>
+                        <th>BVB fee</th>
+                        <th>Intra-day fee</th>
+                    </tr>
+                </thead>
+                <tbody>${rows}</tbody>
+            </table>
+        `;
+    }
+
+    async function initMeta() {
+        eurRonDownloadEl.href = "input/meta/eur_ron.json";
+        tvFeesDownloadEl.href = "input/meta/tradeville_fees_ro_bvb.json";
+
+        try {
+            const eur = await loadMetaJson("input/meta/eur_ron.json");
+            eurRonValueEl.textContent = (typeof eur.eur_ron === "number") ? eur.eur_ron.toFixed(4) : "—";
+            eurRonUpdatedEl.textContent = eur.updated_at_utc || "—";
+        } catch {
+            eurRonValueEl.textContent = "—";
+            eurRonUpdatedEl.textContent = "—";
+        }
+
+        try {
+            const fees = await loadMetaJson("input/meta/tradeville_fees_ro_bvb.json");
+            tvFeesStatusEl.textContent = "Loaded ✅";
+            tvFeesStatusEl.style.color = "#2ea043";
+            tvFeesUpdatedEl.textContent = fees.updated_at_utc || "—";
+            renderFeesPreview(fees);
+        } catch {
+            tvFeesStatusEl.textContent = "Unavailable";
+            tvFeesStatusEl.style.color = "#d73a49";
+            tvFeesUpdatedEl.textContent = "—";
+        }
     }
 
     (async function init() {
         try {
             statusEl.textContent = "Loading…";
 
+            await initMeta();
+
             const files = await loadFolderListing();
             const { dates, fileByDate } = extractDates(files);
 
-            const todayISO = isoDate(new Date());
-            const missing = computeMissing(dates, todayISO);
+            const missing = computeMissing(dates);
 
             statusEl.textContent = "Loaded ✅";
 
             firstDateEl.textContent = dates[0] || "—";
             lastDateEl.textContent = dates[dates.length - 1] || "—";
-            presentCountEl.textContent = String(dates.length);
-            missingCountEl.textContent = String(missing.length);
+            presentCountEl.textContent = dates.length;
+            missingCountEl.textContent = missing.length;
 
             statusLastDateEl.textContent = dates[dates.length - 1] || "—";
             renderCoverageStatus(dates, missing);
-
             renderCalendar(dates);
             renderMissing(missing);
             renderFileList(dates, fileByDate);
         } catch (e) {
             console.error(e);
             statusEl.textContent = "Failed ❌";
-            calendarEl.innerHTML = `<div class="muted">Could not load data coverage.</div>`;
-            fileListEl.textContent = "—";
-            missingDaysEl.textContent = "—";
         }
     })();
 </script>
