@@ -6,234 +6,67 @@
     <title>BVB Portfolio Tracker</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-        input[readonly] {
-            background-color: #eee;
-            color: #666;
-            cursor: not-allowed;
+        input[readonly]{background-color:#eee;color:#666;cursor:not-allowed}
+        .muted{font-size:13px;color:#666}
+        .spacer-8{height:8px}.spacer-16{height:16px}.spacer-24{height:24px}
+        .section{margin-bottom:18px}
+        .row-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .btn-secondary{background-color:#6c63ff;color:#fff;padding:10px 14px;border-radius:6px;cursor:pointer;border:none;width:auto}
+        .card-like{border:1px solid #ddd;border-radius:10px;background:#fff;padding:14px}
+        textarea.tradeville-input{
+            width:100%;min-height:160px;resize:vertical;padding:10px;border:1px solid #ccc;border-radius:8px;
+            font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+            font-size:12px;line-height:1.4;background:#fff
         }
+        .small-table td,.small-table th{padding:8px}
+        .right{text-align:right}.center{text-align:center}
 
-        .muted { font-size: 13px; color: #666; }
-        .spacer-8 { height: 8px; }
-        .spacer-16 { height: 16px; }
-        .spacer-24 { height: 24px; }
-        .spacer-12 { height: 12px; } /* (was referenced in file but missing) */
+        .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;line-height:1;border:1px solid transparent;user-select:none;white-space:nowrap}
+        .badge-success{background:rgba(46,160,67,.12);color:#2ea043;border-color:rgba(46,160,67,.25)}
+        .status-row{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:8px}
 
-        .section { margin-bottom: 18px; }
+        .segmented{display:inline-flex;border:1px solid rgba(108,99,255,.35);border-radius:999px;overflow:hidden;background:transparent;height:38px}
+        .segmented input{position:absolute;opacity:0;pointer-events:none}
+        .segmented label{display:inline-flex;align-items:center;justify-content:center;padding:0 14px;height:38px;font-size:13px;cursor:pointer;color:#6c63ff;user-select:none;white-space:nowrap;background:rgba(108,99,255,.10);box-sizing:border-box}
+        .segmented label+label{border-left:1px solid rgba(108,99,255,.25)}
+        .segmented label.active{background:#6c63ff;color:#fff}
 
-        .row-actions {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
+        .collapse-wrap{overflow:hidden;transition:max-height 220ms ease,opacity 220ms ease,transform 220ms ease;opacity:1;transform:translateY(0);max-height:2000px}
+        .collapse-wrap.is-hidden{max-height:0;opacity:0;transform:translateY(-6px);pointer-events:none}
 
-        .btn-secondary {
-            background-color: #6c63ff;
-            color: white;
-            padding: 10px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            border: none;
-            width: auto;
-        }
+        details.import-details{border:1px solid #ddd;border-radius:10px;background:#fff;padding:10px 12px}
+        details.import-details>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px;font-weight:600}
+        details.import-details>summary::-webkit-details-marker{display:none}
+        .summary-hint{font-weight:400;color:#666;font-size:12px}
+        .chev{width:10px;height:10px;border-right:2px solid rgba(0,0,0,.45);border-bottom:2px solid rgba(0,0,0,.45);transform:rotate(45deg);transition:transform 160ms ease;margin-left:8px;flex:0 0 auto}
+        details[open] .chev{transform:rotate(225deg)}
 
-        .card-like {
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background: #fff;
-            padding: 14px;
-        }
+        .yn{display:flex;align-items:center;justify-content:flex-start;gap:12px;flex-wrap:wrap}
+        .yn-label{font-weight:600}
+        .yn-switch{display:inline-flex;border-radius:999px;overflow:hidden;border:1px solid rgba(108,99,255,.35);background:rgba(108,99,255,.10)}
+        .yn-switch button{border:0;padding:8px 14px;cursor:pointer;font-size:13px;color:#6c63ff;background:transparent;transition:background 160ms ease,color 160ms ease;min-width:54px}
+        .yn-switch button+button{border-left:1px solid rgba(108,99,255,.25)}
+        .yn-switch button.active{background:#6c63ff;color:#fff}
+        .yn-hidden-checkbox{position:absolute;opacity:0;pointer-events:none}
+        .yn-row{margin-top:10px}
 
-        textarea.tradeville-input {
-            width: 100%;
-            min-height: 160px;
-            resize: vertical;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 12px;
-            line-height: 1.4;
-            background: #fff;
-        }
+        .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        @media (max-width:760px){.mini-grid{grid-template-columns:1fr}}
+        .kv{display:flex;flex-direction:column;gap:4px}
+        .kv .k{font-size:12px;color:#666}
+        .kv .v{font-size:14px;color:#222;font-weight:600}
 
-        .small-table td, .small-table th { padding: 8px; }
-        .right { text-align: right; }
-        .center { text-align: center; }
+        .pill{display:inline-flex;align-items:center;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;border:1px solid rgba(0,0,0,.12);background:rgba(0,0,0,.06);color:#222;width:fit-content}
+        .pill.PLATINUM{background:rgba(30,30,30,.12);border-color:rgba(30,30,30,.25);color:#1e1e1e}
+        .pill.GOLD{background:rgba(242,193,78,.22);border-color:rgba(242,193,78,.45);color:#7a5a00}
+        .pill.SILVER{background:rgba(176,176,176,.22);border-color:rgba(176,176,176,.45);color:#4a4a4a}
+        .pill.BRONZE{background:rgba(199,124,46,.22);border-color:rgba(199,124,46,.45);color:#6a3f12}
+        .pill.STANDARD{background:rgba(91,126,166,.22);border-color:rgba(91,126,166,.45);color:#2e4f73}
 
-        /* green "Loaded (n rows)" badges */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            line-height: 1;
-            border: 1px solid transparent;
-            user-select: none;
-            white-space: nowrap;
-        }
-        .badge-success {
-            background: rgba(46,160,67,0.12);
-            color: #2ea043;
-            border-color: rgba(46,160,67,0.25);
-        }
-
-        .status-row {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 6px;
-            margin-top: 8px;
-        }
-
-        /* segmented switch */
-        .segmented {
-            display: inline-flex;
-            border: 1px solid rgba(108,99,255,0.35);
-            border-radius: 999px;
-            overflow: hidden;
-            background: transparent;
-            height: 38px;
-        }
-        .segmented input { position: absolute; opacity: 0; pointer-events: none; }
-        .segmented label {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 14px;
-            height: 38px;
-            font-size: 13px;
-            cursor: pointer;
-            color: #6c63ff;
-            user-select: none;
-            white-space: nowrap;
-            background: rgba(108,99,255,0.10);
-            box-sizing: border-box;
-        }
-        .segmented label + label { border-left: 1px solid rgba(108,99,255,0.25); }
-        .segmented label.active { background: #6c63ff; color: #fff; }
-
-        /* transitions for import blocks */
-        .collapse-wrap {
-            overflow: hidden;
-            transition: max-height 220ms ease, opacity 220ms ease, transform 220ms ease;
-            opacity: 1;
-            transform: translateY(0);
-            max-height: 2000px;
-        }
-        .collapse-wrap.is-hidden {
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-6px);
-            pointer-events: none;
-        }
-
-        /* imported portfolio values collapsible */
-        details.import-details {
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            background: #fff;
-            padding: 10px 12px;
-        }
-        details.import-details > summary {
-            cursor: pointer;
-            list-style: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            font-weight: 600;
-        }
-        details.import-details > summary::-webkit-details-marker { display: none; }
-        .summary-hint { font-weight: 400; color: #666; font-size: 12px; }
-        .chev {
-            width: 10px;
-            height: 10px;
-            border-right: 2px solid rgba(0,0,0,0.45);
-            border-bottom: 2px solid rgba(0,0,0,0.45);
-            transform: rotate(45deg);
-            transition: transform 160ms ease;
-            margin-left: 8px;
-            flex: 0 0 auto;
-        }
-        details[open] .chev { transform: rotate(225deg); }
-
-        /* Yes/No switch */
-        .yn { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; }
-        .yn-label { font-weight: 600; }
-        .yn-switch {
-            display: inline-flex;
-            border-radius: 999px;
-            overflow: hidden;
-            border: 1px solid rgba(108,99,255,0.35);
-            background: rgba(108,99,255,0.10);
-        }
-        .yn-switch button {
-            border: 0;
-            padding: 8px 14px;
-            cursor: pointer;
-            font-size: 13px;
-            color: #6c63ff;
-            background: transparent;
-            transition: background 160ms ease, color 160ms ease;
-            min-width: 54px;
-        }
-        .yn-switch button + button { border-left: 1px solid rgba(108,99,255,0.25); }
-        .yn-switch button.active { background: #6c63ff; color: #fff; }
-        .yn-hidden-checkbox { position: absolute; opacity: 0; pointer-events: none; }
-        .yn-row { margin-top: 10px; }
-
-        /* Fee tier section */
-        .mini-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        @media (max-width: 760px) { .mini-grid { grid-template-columns: 1fr; } }
-        .kv { display: flex; flex-direction: column; gap: 4px; }
-        .kv .k { font-size: 12px; color: #666; }
-        .kv .v { font-size: 14px; color: #222; font-weight: 600; }
-
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 12px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 800;
-            border: 1px solid rgba(0,0,0,0.12);
-            background: rgba(0,0,0,0.06);
-            color: #222;
-            width: fit-content;
-        }
-        .pill.PLATINUM { background: rgba(30,30,30,0.12); border-color: rgba(30,30,30,0.25); color:#1e1e1e; }
-        .pill.GOLD     { background: rgba(242,193,78,0.22); border-color: rgba(242,193,78,0.45); color:#7a5a00; }
-        .pill.SILVER   { background: rgba(176,176,176,0.22); border-color: rgba(176,176,176,0.45); color:#4a4a4a; }
-        .pill.BRONZE   { background: rgba(199,124,46,0.22); border-color: rgba(199,124,46,0.45); color:#6a3f12; }
-        .pill.STANDARD { background: rgba(91,126,166,0.22); border-color: rgba(91,126,166,0.45); color:#2e4f73; }
-
-        /* make fees stand out */
-        .fee-big {
-            font-size: 18px;
-            font-weight: 800;
-            color: #222;
-        }
-        .fee-sub {
-            font-size: 12px;
-            color: #666;
-            margin-top: 2px;
-        }
-
-        .suggestion-details {
-            margin-top: 8px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        /* for negative unallocated display (fee can push over cash) */
-        .neg { color: #b42318; font-weight: 700; }
+        .fee-big{font-size:18px;font-weight:800;color:#222}
+        .fee-sub{font-size:12px;color:#666;margin-top:2px}
+        .suggestion-details{margin-top:8px;font-size:12px;color:#666}
+        .neg{color:#b42318;font-weight:700}
     </style>
 </head>
 <body>
@@ -256,16 +89,11 @@
     <div class="file-input section">
         <label>BVB Companies CSV</label>
         <div class="file-wrapper" style="justify-content: space-between;">
-            <span class="file-name" id="bvbSourceStatus">
-                Using latest from repository: <b>bvb-companies-latest.csv</b>
-            </span>
-            <a
-                    href="input/bvb_distribution/bvb-companies-latest.csv"
-                    class="file-label"
-                    style="text-decoration: none; display: inline-block;"
-                    target="_blank"
-                    rel="noopener noreferrer"
-            >
+      <span class="file-name" id="bvbSourceStatus">
+        Using latest from repository: <b>bvb-companies-latest.csv</b>
+      </span>
+            <a href="input/bvb_distribution/bvb-companies-latest.csv" class="file-label"
+               style="text-decoration:none;display:inline-block;" target="_blank" rel="noopener noreferrer">
                 Open latest
             </a>
         </div>
@@ -279,7 +107,7 @@
     <div class="section">
         <label>Portfolio import</label>
 
-        <div style="margin-top: 8px;">
+        <div style="margin-top:8px;">
             <div class="segmented" id="importSegmented">
                 <input type="radio" name="importMode" id="importModeCsv" value="csv" checked />
                 <label for="importModeCsv" id="segCsv" class="active">CSV upload</label>
@@ -300,7 +128,7 @@
                     <span class="file-name" id="portfolioFileName">No file chosen</span>
                 </div>
 
-                <div style="margin-top: 8px;" class="muted">
+                <div style="margin-top:8px;" class="muted">
                     Expected headers: <b>symbol,value,market_price</b>.
                     <br/>
                     Use <b>CASH_VALUE</b> row for available cash (e.g. <code>CASH_VALUE,12023.80,</code>).
@@ -315,10 +143,10 @@
 
         <div id="pasteImportBlock" class="collapse-wrap is-hidden">
             <div class="card-like">
-                <div class="muted" style="margin-bottom: 8px;">
+                <div class="muted" style="margin-bottom:8px;">
                     Paste the Tradeville portfolio table here. Extra text before/after is fine.
-                    The parser extracts:
-                    <b>Pret piata</b> as <b>market_price</b>, <b>evaluare</b> as <b>value</b>, and detects cash from the <b>RON</b> row.
+                    The parser extracts: <b>Pret piata</b> as <b>market_price</b>, <b>evaluare</b> as <b>value</b>,
+                    and detects cash from the <b>RON</b> row.
                 </div>
 
                 <textarea id="tradevilleText" class="tradeville-input" placeholder="Paste Tradeville table text here..."></textarea>
@@ -340,18 +168,18 @@
     <div id="importPreviewBlock" class="section" style="display:none;">
         <details class="import-details" id="importPreviewDetails">
             <summary>
-                <span>
-                    Imported portfolio values
-                    <span class="summary-hint" id="importPreviewHint">· click to expand</span>
-                </span>
+        <span>
+          Imported portfolio values
+          <span class="summary-hint" id="importPreviewHint">· click to expand</span>
+        </span>
                 <span style="display:inline-flex; align-items:center; gap:10px;">
-                    <span id="importPreviewRowsBadge" class="badge badge-success" style="display:none;"></span>
-                    <span class="chev" aria-hidden="true"></span>
-                </span>
+          <span id="importPreviewRowsBadge" class="badge badge-success" style="display:none;"></span>
+          <span class="chev" aria-hidden="true"></span>
+        </span>
             </summary>
 
             <div class="spacer-8"></div>
-            <div class="muted" style="margin-bottom: 10px;">
+            <div class="muted" style="margin-bottom:10px;">
                 Normalized input used for report generation (stocks-only weights; CASH_VALUE excluded from weights).
             </div>
             <div id="importPreviewTable"></div>
@@ -361,7 +189,7 @@
     <div class="input-group section">
         <label for="totalInvestment">Total Portfolio Value (stocks-only, auto from import)</label>
         <input type="number" id="totalInvestment" placeholder="Auto-filled from portfolio import" readonly />
-        <div style="margin-top: 6px;" class="muted">
+        <div style="margin-top:6px;" class="muted">
             This excludes CASH_VALUE so cash won’t influence stock weights.
         </div>
     </div>
@@ -390,7 +218,7 @@
         </div>
     </div>
 
-    <div id="investmentFields" style="display: none;" class="section">
+    <div id="investmentFields" style="display:none;" class="section">
         <div class="input-group">
             <label for="newInvestmentAmount">New Investment Amount (auto from CASH_VALUE)</label>
             <input type="number" id="newInvestmentAmount" placeholder="Enter new investment amount" />
@@ -411,31 +239,23 @@
 
     <div class="report-container">
         <div id="report"></div>
-
         <div id="investmentSuggestions"></div>
 
-        <!-- Fee tier block (will be moved INSIDE Investment Suggestions rendering as first element) -->
         <div id="feeTierBlock" class="section" style="display:none;">
             <div class="card-like">
                 <div style="font-weight:700; color:#222;">TradeVille fee tier (BVB, estimated)</div>
 
                 <div class="spacer-8"></div>
-                <div>
-                    <span class="pill" id="feeTierName">—</span>
-                </div>
+                <div><span class="pill" id="feeTierName">—</span></div>
 
-                <!-- more spacing from tier -> fees -->
                 <div class="spacer-16"></div>
 
-                <!-- FEES FIRST and more prominent -->
                 <div class="fee-big" id="feeTierFeesBig">—</div>
                 <div class="fee-sub" id="feeTierFeesSub"></div>
 
-                <!-- more spacing between "All Inclusive commission" and tier rule -->
                 <div class="spacer-16"></div>
 
-                <!-- TIER RULE AFTER FEES -->
-                <div class="kv" style="margin-bottom: 10px;">
+                <div class="kv" style="margin-bottom:10px;">
                     <div class="k">Tier rule</div>
                     <div class="v" id="feeTierRule">—</div>
                 </div>
@@ -443,22 +263,10 @@
                 <div class="spacer-16"></div>
 
                 <div class="mini-grid">
-                    <div class="kv">
-                        <div class="k">Portfolio total (RON)</div>
-                        <div class="v" id="feePortfolioRon">—</div>
-                    </div>
-                    <div class="kv">
-                        <div class="k">EUR/RON</div>
-                        <div class="v" id="feeEurRon">—</div>
-                    </div>
-                    <div class="kv">
-                        <div class="k">Portfolio total (EUR)</div>
-                        <div class="v" id="feePortfolioEur">—</div>
-                    </div>
-                    <div class="kv">
-                        <div class="k">Updated</div>
-                        <div class="v" id="feeTierUpdated">—</div>
-                    </div>
+                    <div class="kv"><div class="k">Portfolio total (RON)</div><div class="v" id="feePortfolioRon">—</div></div>
+                    <div class="kv"><div class="k">EUR/RON</div><div class="v" id="feeEurRon">—</div></div>
+                    <div class="kv"><div class="k">Portfolio total (EUR)</div><div class="v" id="feePortfolioEur">—</div></div>
+                    <div class="kv"><div class="k">Updated</div><div class="v" id="feeTierUpdated">—</div></div>
                 </div>
 
                 <div class="spacer-8"></div>
@@ -489,13 +297,11 @@
     const importPreviewBlockEl = document.getElementById("importPreviewBlock");
     const importPreviewTableEl = document.getElementById("importPreviewTable");
 
-    // badges
     const bvbRowsBadgeEl = document.getElementById("bvbRowsBadge");
     const portfolioRowsBadgeEl = document.getElementById("portfolioRowsBadge");
     const tradevilleRowsBadgeEl = document.getElementById("tradevilleRowsBadge");
     const importPreviewRowsBadgeEl = document.getElementById("importPreviewRowsBadge");
 
-    // fee tier UI
     const feeTierBlockEl = document.getElementById("feeTierBlock");
     const feeTierNameEl = document.getElementById("feeTierName");
     const feeTierFeesBigEl = document.getElementById("feeTierFeesBig");
@@ -508,12 +314,9 @@
     const feeTierUpdatedEl = document.getElementById("feeTierUpdated");
 
     let parsedPortfolio = null;
-
-    // cached meta
     let metaEurRon = null;
     let metaFees = null;
 
-    // Import mode switching
     const importModeCsvEl = document.getElementById("importModeCsv");
     const importModePasteEl = document.getElementById("importModePaste");
     const csvImportBlockEl = document.getElementById("csvImportBlock");
@@ -530,7 +333,6 @@
     function setImportMode(mode) {
         const isCsv = mode === "csv";
         setSegmentActive(isCsv);
-
         csvImportBlockEl.classList.toggle("is-hidden", !isCsv);
         pasteImportBlockEl.classList.toggle("is-hidden", isCsv);
 
@@ -548,7 +350,6 @@
     importModeCsvEl.addEventListener("change", () => setImportMode("csv"));
     importModePasteEl.addEventListener("change", () => setImportMode("paste"));
 
-    // Yes/No switches (UI)
     const filterToggleEl = document.getElementById("filterPortfolioToggle");
     const filterYesBtn = document.getElementById("filterYes");
     const filterNoBtn = document.getElementById("filterNo");
@@ -575,7 +376,6 @@
     newInvToggleEl.addEventListener("change", syncInvestmentButtons);
     syncInvestmentButtons();
 
-    // CSV import (market_price mandatory)
     document.getElementById("portfolioFile").addEventListener("change", function () {
         const file = this.files[0];
         document.getElementById("portfolioFileName").textContent = file ? file.name : "No file chosen";
@@ -599,28 +399,20 @@
         reader.onload = function (event) {
             try {
                 const rows = parseCSV(event.target.result);
-
                 const hasSymbol = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "symbol");
                 const hasValue  = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "value");
                 const hasPrice  = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "market_price");
-
-                if (!hasSymbol || !hasValue || !hasPrice) {
-                    throw new Error("Portfolio CSV must contain headers: symbol,value,market_price");
-                }
+                if (!hasSymbol || !hasValue || !hasPrice) throw new Error("Portfolio CSV must contain headers: symbol,value,market_price");
 
                 const { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks } = portfolioValues(rows);
-
                 parsedPortfolio = { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks, source: "csv" };
 
                 totalInvestmentEl.value = totalStocksValue.toFixed(2);
-
                 if (cashValue > 0) {
                     newInvestmentAmountEl.value = cashValue.toFixed(2);
-                    portfolioParseStatusEl.textContent =
-                        `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, CASH_VALUE: ${cashValue.toFixed(2)})`;
+                    portfolioParseStatusEl.textContent = `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, CASH_VALUE: ${cashValue.toFixed(2)})`;
                 } else {
-                    portfolioParseStatusEl.textContent =
-                        `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no CASH_VALUE row found)`;
+                    portfolioParseStatusEl.textContent = `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no CASH_VALUE row found)`;
                 }
 
                 const totalRows = (rawStocks?.length || 0) + (cashValue > 0 ? 1 : 0);
@@ -638,7 +430,6 @@
         reader.readAsText(file);
     });
 
-    // Tradeville paste import
     document.getElementById("parseTradevilleBtn").addEventListener("click", function () {
         const text = String(document.getElementById("tradevilleText").value || "").trim();
 
@@ -659,24 +450,17 @@
 
         try {
             const rows = parseTradevilleToRows(text);
-
-            if (!rows || rows.length === 0) {
-                throw new Error("No usable instrument rows found. Make sure you pasted the Tradeville table.");
-            }
+            if (!rows || rows.length === 0) throw new Error("No usable instrument rows found. Make sure you pasted the Tradeville table.");
 
             const { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks } = portfolioValues(rows);
-
             parsedPortfolio = { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks, source: "tradeville" };
 
             totalInvestmentEl.value = totalStocksValue.toFixed(2);
-
             if (cashValue > 0) {
                 newInvestmentAmountEl.value = cashValue.toFixed(2);
-                tradevilleParseStatusEl.textContent =
-                    `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, CASH_VALUE: ${cashValue.toFixed(2)})`;
+                tradevilleParseStatusEl.textContent = `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, CASH_VALUE: ${cashValue.toFixed(2)})`;
             } else {
-                tradevilleParseStatusEl.textContent =
-                    `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no RON/CASH line detected)`;
+                tradevilleParseStatusEl.textContent = `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no RON/CASH line detected)`;
             }
 
             const totalRows = (rawStocks?.length || 0) + (cashValue > 0 ? 1 : 0);
@@ -692,7 +476,6 @@
         }
     });
 
-    // Report generation
     document.getElementById("generateReport").addEventListener("click", async function () {
         if (!parsedPortfolio) {
             alert("Please import your portfolio first (CSV upload or Tradeville copy/paste).");
@@ -742,7 +525,6 @@
         bvbRowsBadgeEl.textContent = `Loaded (${bvbCount} rows)`;
         bvbRowsBadgeEl.style.display = "inline-flex";
 
-        // load fee meta (best-effort)
         await loadFeeMetaIfNeeded();
 
         generateReportAndSuggestions(
@@ -801,25 +583,23 @@
         feeTierNameEl.textContent = tier.name || "—";
         feeTierNameEl.className = `pill ${(tier.name || "").toUpperCase()}`;
 
-        // FEES FIRST and prominent; intraday skipped
         feeTierFeesBigEl.textContent = `${feePct.toFixed(2)}% + €${fixedEur.toFixed(2)}`;
         feeTierFeesSubEl.textContent = `All Inclusive commission for BVB (estimate)`;
 
-        // tier rule AFTER fees
         feeTierRuleEl.textContent = `≥ ${formatMoney(thr)} EUR`;
 
         const eurUpdated = eurJson?.updated_at_utc ? String(eurJson.updated_at_utc) : "—";
         const feesUpdated = feesJson?.updated_at_utc ? String(feesJson.updated_at_utc) : "—";
 
         feeTierSourcesEl.innerHTML = `
-            Sources:
-            <a href="${TRADEVILLE_FEES_JSON_URL}" target="_blank" rel="noopener noreferrer">tradeville_fees_ro_bvb.json</a>
-            ·
-            <a href="${EUR_RON_JSON_URL}" target="_blank" rel="noopener noreferrer">eur_ron.json</a>
-        `;
+      Sources:
+      <a href="${TRADEVILLE_FEES_JSON_URL}" target="_blank" rel="noopener noreferrer">tradeville_fees_ro_bvb.json</a>
+      ·
+      <a href="${EUR_RON_JSON_URL}" target="_blank" rel="noopener noreferrer">eur_ron.json</a>
+    `;
 
         feePortfolioRonEl.textContent = formatMoney(totalRon) + " RON";
-        feeEurRonEl.textContent = eurRon.toFixed(4) + ` (observed: ${eurJson?.observed_date_text || "—"})`;
+        feeEurRonEl.textContent = eurRon + ` (observed: ${eurJson?.observed_date_text || "—"})`;
         feePortfolioEurEl.textContent = formatMoney(totalEur) + " EUR";
         feeTierUpdatedEl.textContent = `fees: ${feesUpdated} · eur: ${eurUpdated}`;
 
@@ -834,13 +614,13 @@
         feeTierFeesSubEl.textContent = "";
     }
 
-    // Imported preview
     function hideImportPreview() {
         importPreviewBlockEl.style.display = "none";
         importPreviewTableEl.innerHTML = "";
         importPreviewRowsBadgeEl.style.display = "none";
     }
 
+    // IMPORTANT: Do not round market_price in the UI either
     function renderImportPreview(state) {
         if (!state) return;
 
@@ -850,41 +630,40 @@
         const rowsHtml = stockRows.map(r => {
             const weight = (r.value / state.totalStocksValue) * 100;
             return `
-                <tr>
-                    <td class="center">${escapeHtml(r.symbol)}</td>
-                    <td class="right">${r.value.toFixed(2)}</td>
-                    <td class="right">${Number(r.market_price).toFixed(4)}</td>
-                    <td class="right">${weight.toFixed(2)}%</td>
-                </tr>
-            `;
+        <tr>
+          <td class="center">${escapeHtml(r.symbol)}</td>
+          <td class="right">${r.value.toFixed(2)}</td>
+          <td class="right">${r.market_price}</td>
+          <td class="right">${weight.toFixed(2)}%</td>
+        </tr>
+      `;
         }).join("");
 
         const cashRowHtml = cash > 0 ? `
-            <tr>
-                <td class="center">CASH_VALUE</td>
-                <td class="right">${cash.toFixed(2)}</td>
-                <td class="right muted">—</td>
-                <td class="right muted">excluded</td>
-            </tr>
-        ` : "";
+      <tr>
+        <td class="center">CASH_VALUE</td>
+        <td class="right">${cash.toFixed(2)}</td>
+        <td class="right muted">—</td>
+        <td class="right muted">excluded</td>
+      </tr>
+    ` : "";
 
         importPreviewTableEl.innerHTML = `
-            <table class="small-table">
-                <tr>
-                    <th>Symbol</th>
-                    <th>Value</th>
-                    <th>Market price</th>
-                    <th>Weight (stocks-only)</th>
-                </tr>
-                ${rowsHtml}
-                ${cashRowHtml}
-            </table>
-        `;
+      <table class="small-table">
+        <tr>
+          <th>Symbol</th>
+          <th>Value</th>
+          <th>Market price</th>
+          <th>Weight (stocks-only)</th>
+        </tr>
+        ${rowsHtml}
+        ${cashRowHtml}
+      </table>
+    `;
 
         const totalRows = stockRows.length + (cash > 0 ? 1 : 0);
         importPreviewRowsBadgeEl.textContent = `Loaded (${totalRows} rows)`;
         importPreviewRowsBadgeEl.style.display = "inline-flex";
-
         importPreviewBlockEl.style.display = "block";
     }
 
@@ -901,7 +680,7 @@
         return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
-    // Tradeville parser + CSV + portfolio values (UNCHANGED logic)
+    // ---- Tradeville parsing helpers (as before) ----
     function parseTradevilleToRows(text) {
         const lines = String(text)
             .replace(/\r\n/g, "\n")
@@ -1030,6 +809,7 @@
         return best;
     }
 
+    // ---- CSV parsing (as before) ----
     function detectDelimiter(headerLine) {
         const commaCount = (headerLine.match(/,/g) || []).length;
         const semiCount = (headerLine.match(/;/g) || []).length;
@@ -1140,6 +920,46 @@
         return x.toFixed(2);
     }
 
+    function computeFeeInfoForCards(totalRon, eurJson, feesJson) {
+        try {
+            const eurRon = Number(eurJson?.eur_ron);
+            if (!Number.isFinite(eurRon) || eurRon <= 0) return null;
+            const totalEur = totalRon / eurRon;
+            const tier = pickTier(totalEur, feesJson);
+            if (!tier) return null;
+
+            return {
+                eurRon,
+                tierName: tier.name || null,
+                feePercent: Number(tier.fee_percent ?? 0),
+                fixedFeeEur: Number(tier.fixed_fee_eur ?? 0)
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    // IMPORTANT: price is displayed as-is (no rounding)
+    function buildSuggestionDetailsLine(it, feeInfo) {
+        if (!it || !Number.isFinite(it.shares) || !Number.isFinite(it.price) || it.shares <= 0) return "";
+
+        if (Number.isFinite(it.amountGross) && Number.isFinite(it.fee) && Number.isFinite(it.totalCost)) {
+            if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
+                return `${it.shares} shares × ${it.price} ≈ ${it.amountGross.toFixed(2)}`;
+            }
+            return `${it.shares} shares × ${it.price} + ${it.fee.toFixed(2)} ≈ ${it.totalCost.toFixed(2)}`;
+        }
+
+        const gross = it.shares * it.price;
+        if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
+            return `${it.shares} shares × ${it.price} ≈ ${gross.toFixed(2)}`;
+        }
+        const variableFee = gross * (feeInfo.feePercent / 100);
+        const fixedFeeRon = feeInfo.fixedFeeEur * feeInfo.eurRon;
+        const fee = variableFee + fixedFeeRon;
+        return `${it.shares} shares × ${it.price} + ${fee.toFixed(2)} ≈ ${(gross + fee).toFixed(2)}`;
+    }
+
     function generateReportAndSuggestions(
         bvbData,
         portfolioWithValues,
@@ -1182,224 +1002,349 @@
             const cls = diffValue >= 0 ? "positive-difference" : "negative-difference";
 
             return `
-                <tr>
-                    <td>${c.symbol}</td>
-                    <td>${c.bvbWeight.toFixed(2)}%</td>
-                    <td>${c.normalizedWeight.toFixed(2)}%</td>
-                    <td>${pWeight.toFixed(2)}%</td>
-                    <td class="${cls}">${diffValue.toFixed(2)} (${diffPercent.toFixed(2)}%)</td>
-                </tr>
-            `;
+        <tr>
+          <td>${c.symbol}</td>
+          <td>${c.bvbWeight.toFixed(2)}%</td>
+          <td>${c.normalizedWeight.toFixed(2)}%</td>
+          <td>${pWeight.toFixed(2)}%</td>
+          <td class="${cls}">${diffValue.toFixed(2)} (${diffPercent.toFixed(2)}%)</td>
+        </tr>
+      `;
         }).join("");
 
         reportDiv.innerHTML = `
-            <h3>Portfolio Comparison</h3>
-            <table>
-                <tr>
-                    <th>Symbol</th>
-                    <th>BVB Weight</th>
-                    <th>Normalized BVB Weight</th>
-                    <th>Portfolio Weight</th>
-                    <th>Difference (Val and %)</th>
-                </tr>
-                ${rowsHtml}
-            </table>
-            <div style="margin-top: 10px;" class="muted">
-                Sanity check: Σ Difference ≈ <b>${formatZeroNoMinus(sumDiff)}</b>
-            </div>
-        `;
+      <h3>Portfolio Comparison</h3>
+      <table>
+        <tr>
+          <th>Symbol</th>
+          <th>BVB Weight</th>
+          <th>Normalized BVB Weight</th>
+          <th>Portfolio Weight</th>
+          <th>Difference (Val and %)</th>
+        </tr>
+        ${rowsHtml}
+      </table>
+      <div style="margin-top:10px;" class="muted">
+        Sanity check: Σ Difference ≈ <b>${formatZeroNoMinus(sumDiff)}</b>
+      </div>
+    `;
 
         if (!(newInvestment > 0)) return;
 
-        const suggestions = computeSuggestionsWithMarketPrices(
-            normalizedBvb,
-            portfolioWithValues,
-            totalStocksValue,
-            newInvestment,
-            minInvestmentAmount
-        );
-
         const feeInfo = computeFeeInfoForCards(totalAllValue, metaEurRon, metaFees);
 
-        // --- FIX: totals in cards match "shares × price + fee" ---
-        const computedItems = suggestions.items.map(it => {
-            const t = computeOrderTotals(it, feeInfo);
-            return { ...it, _gross: t.gross, _fee: t.fee, _total: t.total };
-        });
-
-        const allocatedGross = computedItems.reduce((s, x) => s + (x._gross || 0), 0);
-        const allocatedTotal = computedItems.reduce((s, x) => s + (x._total || 0), 0);
-        const unallocatedTotal = (Number(newInvestment) || 0) - allocatedTotal;
-
-        const listItems = computedItems.map(it => {
-            const detailsLine = buildSuggestionDetailsLine(it, feeInfo);
-            // BIG NUMBER now shows total (gross + fee), matching details line.
-            return `
-                <li>
-                    <div class="investment-symbol">${it.symbol}</div>
-                    <div class="investment-amount">${(it._total ?? it.amount).toFixed(2)}</div>
-                    ${detailsLine ? `<div class="suggestion-details">${detailsLine}</div>` : ``}
-                </li>
-            `;
-        }).join("");
-
-        // Render fee tier section HERE and as FIRST element inside Investment Suggestions
-        // (we "adopt" the existing feeTierBlock element by placing it into suggestionsDiv)
+        // Fee tier block first (best effort)
         if (metaEurRon && metaFees) {
             try {
                 renderFeeTierSection(totalAllValue, metaEurRon, metaFees);
-                suggestionsDiv.appendChild(feeTierBlockEl); // move to Investment Suggestions
+                suggestionsDiv.appendChild(feeTierBlockEl);
             } catch (e) {
                 console.warn("Fee tier render failed:", e);
                 hideFeeTierSection();
             }
         }
 
-        const unallocCls = unallocatedTotal < -0.005 ? "neg" : "";
+        const suggestions = computeSuggestionsWithMarketPrices(
+            normalizedBvb,
+            portfolioWithValues,
+            totalStocksValue,
+            newInvestment,
+            minInvestmentAmount,
+            feeInfo
+        );
+
+        const allocatedTotal = suggestions.investedTotal ?? suggestions.items.reduce((s, it) => s + (it.totalCost ?? it.amount), 0);
+        const allocatedGross = suggestions.investedGross ?? suggestions.items.reduce((s, it) => s + (it.amountGross ?? it.amount), 0);
+        const unallocated = suggestions.unallocated;
+
+        const unallocCls = unallocated < -0.005 ? "neg" : "";
+
+        const listItems = suggestions.items.map(it => {
+            const detailsLine = buildSuggestionDetailsLine(it, feeInfo);
+            return `
+        <li>
+          <div class="investment-symbol">${it.symbol}</div>
+          <div class="investment-amount">${(Number.isFinite(it.totalCost) ? it.totalCost : it.amount).toFixed(2)}</div>
+          ${detailsLine ? `<div class="suggestion-details">${detailsLine}</div>` : ``}
+        </li>
+      `;
+        }).join("");
+
+        const feeTierHtml = suggestionsDiv.innerHTML;
 
         suggestionsDiv.innerHTML = `
-            <h3>Investment Suggestions</h3>
-        ` + suggestionsDiv.innerHTML + `
-            <div class="total-investment">
-                Available: ${newInvestment.toFixed(2)}
-                · Allocated: ${allocatedTotal.toFixed(2)}
-                · Unallocated: <span class="${unallocCls}">${formatZeroNoMinus(unallocatedTotal)}</span>
-            </div>
-            <div class="muted" style="margin-top:6px;">
-                Allocated includes estimated fees per symbol (variable + fixed). Gross-only allocated: ${allocatedGross.toFixed(2)}.
-            </div>
-            <ul>
-                ${listItems}
-            </ul>
-            <div class="muted" style="margin-top:10px;">
-                Notes: Suggestions are constrained by market prices (whole shares). Fees shown are estimates (display only).
-            </div>
-        `;
+      <h3>Investment Suggestions</h3>
+      ${feeTierHtml}
+      <div class="total-investment">
+        Available: ${newInvestment.toFixed(2)}
+        · Allocated: ${allocatedTotal.toFixed(2)}
+        · Unallocated: <span class="${unallocCls}">${formatZeroNoMinus(unallocated)}</span>
+      </div>
+      <div class="muted" style="margin-top:6px;">
+        Allocated includes estimated fees per symbol (variable + fixed). Gross-only invested: ${allocatedGross.toFixed(2)}.
+      </div>
+      <ul>${listItems}</ul>
+      <div class="muted" style="margin-top:10px;">
+        Notes: Suggestions are constrained by market prices (whole shares). Fees shown are estimates.
+      </div>
+    `;
 
-        const after = portfolioAfterSuggestions(portfolioWithValues, suggestions.items, totalStocksValue);
-        renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, { ...suggestions, unallocated: Math.max(0, suggestions.unallocated) });
+        const after = portfolioAfterSuggestions(
+            portfolioWithValues,
+            suggestions.items.map(it => ({ symbol: it.symbol, amount: (it.amountGross ?? it.amount), shares: it.shares, price: it.price })),
+            totalStocksValue
+        );
+
+        renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions);
     }
 
-    function computeFeeInfoForCards(totalRon, eurJson, feesJson) {
-        try {
-            const eurRon = Number(eurJson?.eur_ron);
-            if (!Number.isFinite(eurRon) || eurRon <= 0) return null;
-            const totalEur = totalRon / eurRon;
-            const tier = pickTier(totalEur, feesJson);
-            if (!tier) return null;
-
-            return {
-                eurRon,
-                tierName: tier.name || null,
-                feePercent: Number(tier.fee_percent ?? 0),
-                fixedFeeEur: Number(tier.fixed_fee_eur ?? 0)
-            };
-        } catch {
-            return null;
-        }
-    }
-
-    function computeOrderTotals(it, feeInfo) {
-        if (!it || !Number.isFinite(it.shares) || !Number.isFinite(it.price) || it.shares <= 0) {
-            return { gross: 0, fee: 0, total: 0 };
-        }
-
-        const gross = it.shares * it.price;
-
-        if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
-            return { gross, fee: 0, total: gross };
-        }
-
-        const variableFee = gross * (feeInfo.feePercent / 100);
-        const fixedFeeRon = feeInfo.fixedFeeEur * feeInfo.eurRon;
-        const fee = variableFee + fixedFeeRon;
-        const total = gross + fee;
-
-        return { gross, fee, total };
-    }
-
-    function buildSuggestionDetailsLine(it, feeInfo) {
-        if (!it || !Number.isFinite(it.shares) || !Number.isFinite(it.price) || it.shares <= 0) return "";
-        const t = computeOrderTotals(it, feeInfo);
-
-        if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
-            return `${it.shares} shares × ${it.price.toFixed(2)} ≈ ${t.gross.toFixed(2)}`;
-        }
-        return `${it.shares} shares × ${it.price.toFixed(2)} + ${t.fee.toFixed(2)} ≈ ${t.total.toFixed(2)}`;
-    }
-
-    function computeSuggestionsWithMarketPrices(normalizedBvb, portfolioWithValues, totalStocksValue, cashToInvest, minPerStock) {
+    // ✅ Objective-based greedy + sweep-to-spend + fee-aware + min-per-stock respected when opening new symbols
+    function computeSuggestionsWithMarketPrices(
+        normalizedBvb,
+        portfolioWithValues,
+        totalStocksValue,
+        cashToInvest,
+        minPerStock,
+        feeInfo
+    ) {
         const currentBySymbol = new Map(portfolioWithValues.map(p => [p.symbol, p]));
         const targets = normalizedBvb.map(c => ({ symbol: c.symbol, t: c.normalizedWeight / 100 }));
 
-        const V = totalStocksValue;
-        const C = cashToInvest;
+        const T0 = totalStocksValue;
+        const cash0 = cashToInvest;
 
-        const gaps = targets.map(x => {
+        const feePct = (feeInfo && Number.isFinite(feeInfo.feePercent)) ? (feeInfo.feePercent / 100) : 0;
+        const fixedRon =
+            (feeInfo && Number.isFinite(feeInfo.fixedFeeEur) && Number.isFinite(feeInfo.eurRon))
+                ? (feeInfo.fixedFeeEur * feeInfo.eurRon)
+                : 0;
+
+        const minGross = Number.isFinite(minPerStock) && minPerStock > 0 ? minPerStock : 0;
+
+        // universe: symbols with valid market price
+        const universe = [];
+        for (const x of targets) {
             const p = currentBySymbol.get(x.symbol);
-            const v = p ? p.value : 0;
-            const price = p ? p.market_price : NaN;
-            const desired = (V + C) * x.t;
-            const gap = Math.max(0, desired - v);
-            return { symbol: x.symbol, gap, price };
-        });
+            const price = p ? Number(p.market_price) : NaN;
+            if (!Number.isFinite(price) || price <= 0) continue;
+            universe.push({
+                symbol: x.symbol,
+                target: x.t,
+                price,
+                baseValue: p ? Number(p.value) : 0
+            });
+        }
+        if (universe.length === 0) return { items: [], unallocated: cash0, investedGross: 0, investedTotal: 0 };
 
-        const totalGap = gaps.reduce((s, g) => s + g.gap, 0);
-        if (totalGap <= 0) return { items: [], unallocated: C };
+        const bySym = new Map(universe.map(u => [u.symbol, u]));
 
-        let alloc = gaps.map(g => ({
-            symbol: g.symbol,
-            planned: (g.gap / totalGap) * C,
-            price: g.price
-        }));
+        // state per symbol
+        const st = new Map();
+        for (const u of universe) st.set(u.symbol, { shares: 0, gross: 0 });
 
-        let items = alloc.map(a => {
-            const shares = Math.floor(a.planned / a.price);
-            const amount = shares > 0 ? shares * a.price : 0;
-            return { symbol: a.symbol, shares, amount, price: a.price };
-        });
-
-        if (minPerStock && minPerStock > 0) {
-            items = items.map(it => (it.amount > 0 && it.amount < minPerStock) ? { ...it, shares: 0, amount: 0 } : it);
+        function feeFor(gross, shares) {
+            if (shares <= 0) return 0;
+            return gross * feePct + fixedRon;
+        }
+        function totalCostFor(gross, shares) {
+            return gross + feeFor(gross, shares);
         }
 
-        let spent = items.reduce((s, it) => s + it.amount, 0);
-        let leftover = Math.max(0, C - spent);
-
-        const gapMap = new Map(gaps.map(g => [g.symbol, g.gap]));
-        function score(sym) { return gapMap.get(sym) || 0; }
-
-        let guard = 0;
-        while (leftover > 0.0001 && guard < 200000) {
-            guard++;
-
-            const candidates = items
-                .map((it, idx) => ({ ...it, idx }))
-                .filter(it => it.price > 0 && it.price <= leftover);
-
-            if (candidates.length === 0) break;
-
-            candidates.sort((a, b) => score(b.symbol) - score(a.symbol));
-
-            const pick = candidates[0];
-            items[pick.idx].shares += 1;
-            items[pick.idx].amount += pick.price;
-            leftover -= pick.price;
-
-            gapMap.set(pick.symbol, Math.max(0, score(pick.symbol) - pick.price));
+        function currentTotalGrossInvested() {
+            let s = 0;
+            for (const v of st.values()) s += v.gross;
+            return s;
+        }
+        function currentTotalCostInvested() {
+            let s = 0;
+            for (const u of universe) {
+                const v = st.get(u.symbol);
+                s += totalCostFor(v.gross, v.shares);
+            }
+            return s;
         }
 
-        if (minPerStock && minPerStock > 0) {
-            items = items.map(it => (it.amount > 0 && it.amount < minPerStock) ? { ...it, shares: 0, amount: 0 } : it);
-            spent = items.reduce((s, it) => s + it.amount, 0);
-            leftover = Math.max(0, C - spent);
+        // If opening a new symbol (shares=0), ensure we can reach minGross for that symbol
+        // within current cashRemaining (including fees).
+        function canOpenSymbolWithMin(sym, cashRemaining) {
+            if (minGross <= 0) return true;
+            const u = bySym.get(sym);
+            if (!u) return false;
+            const reqShares = Math.ceil(minGross / u.price);
+            const reqGross = reqShares * u.price;
+            const reqTotal = totalCostFor(reqGross, reqShares); // includes fixed fee once
+            return reqTotal <= cashRemaining + 1e-9;
         }
 
-        const finalItems = items
-            .filter(it => it.amount > 0)
-            .map(it => ({ symbol: it.symbol, amount: it.amount, shares: it.shares, price: it.price }));
+        function evalBuyOne(sym) {
+            const u = bySym.get(sym);
+            if (!u) return null;
 
-        return { items: finalItems, unallocated: leftover };
+            const cur = st.get(sym);
+            const nextShares = cur.shares + 1;
+            const nextGross = cur.gross + u.price;
+
+            const prevCost = totalCostFor(cur.gross, cur.shares);
+            const nextCost = totalCostFor(nextGross, nextShares);
+            const deltaCost = nextCost - prevCost;
+
+            const investedGross = currentTotalGrossInvested();
+            const T_before = T0 + investedGross;
+            const T_after  = T_before + u.price;
+
+            let delta = 0;
+            for (const uu of universe) {
+                const vv = st.get(uu.symbol);
+                const grossBefore = vv.gross;
+                const grossAfter  = vv.gross + (uu.symbol === sym ? u.price : 0);
+
+                const newValBefore = uu.baseValue + grossBefore;
+                const newValAfter  = uu.baseValue + grossAfter;
+
+                const wBefore = newValBefore / T_before;
+                const wAfter  = newValAfter  / T_after;
+
+                const errBefore = wBefore - uu.target;
+                const errAfter  = wAfter  - uu.target;
+
+                delta += (errAfter * errAfter) - (errBefore * errBefore);
+            }
+
+            return { deltaObj: delta, deltaCost };
+        }
+
+        function buyOne(sym) {
+            const u = bySym.get(sym);
+            const cur = st.get(sym);
+            cur.shares += 1;
+            cur.gross += u.price;
+        }
+
+        // Greedy pass: only take improvements (deltaObj < 0)
+        function runGreedy(disallowNewSymbolsSet) {
+            let guard = 0;
+            while (guard++ < 200000) {
+                const spent = currentTotalCostInvested();
+                const cashRemaining = cash0 - spent;
+                if (cashRemaining < 0.01) break;
+
+                let bestSym = null;
+                let bestDelta = 0; // need negative
+
+                for (const u of universe) {
+                    const cur = st.get(u.symbol);
+
+                    if (disallowNewSymbolsSet && cur.shares === 0 && disallowNewSymbolsSet.has(u.symbol)) continue;
+
+                    // if this buy would open a symbol, ensure we can reach minGross overall for that symbol
+                    if (cur.shares === 0 && !canOpenSymbolWithMin(u.symbol, cashRemaining)) continue;
+
+                    const ev = evalBuyOne(u.symbol);
+                    if (!ev) continue;
+                    if (ev.deltaCost > cashRemaining + 1e-9) continue;
+
+                    if (ev.deltaObj < bestDelta) {
+                        bestDelta = ev.deltaObj;
+                        bestSym = u.symbol;
+                    }
+                }
+
+                if (!bestSym) break;
+                buyOne(bestSym);
+            }
+        }
+
+        // Sweep pass: spend remaining cash, choose least-bad deltaObj (smallest), while respecting fees/min/open constraints
+        function runSweep(disallowNewSymbolsSet) {
+            let guard = 0;
+            while (guard++ < 200000) {
+                const spent = currentTotalCostInvested();
+                const cashRemaining = cash0 - spent;
+                if (cashRemaining < 0.01) break;
+
+                let bestSym = null;
+                let bestDelta = Infinity;
+                let bestDeltaCost = -Infinity; // tie-break: spend more
+
+                for (const u of universe) {
+                    const cur = st.get(u.symbol);
+
+                    if (disallowNewSymbolsSet && cur.shares === 0 && disallowNewSymbolsSet.has(u.symbol)) continue;
+
+                    // if opening a new symbol during sweep, ensure we can actually satisfy minGross for that symbol
+                    if (cur.shares === 0 && !canOpenSymbolWithMin(u.symbol, cashRemaining)) continue;
+
+                    const ev = evalBuyOne(u.symbol);
+                    if (!ev) continue;
+                    if (ev.deltaCost > cashRemaining + 1e-9) continue;
+
+                    if (
+                        ev.deltaObj < bestDelta - 1e-15 ||
+                        (Math.abs(ev.deltaObj - bestDelta) <= 1e-15 && ev.deltaCost > bestDeltaCost)
+                    ) {
+                        bestDelta = ev.deltaObj;
+                        bestDeltaCost = ev.deltaCost;
+                        bestSym = u.symbol;
+                    }
+                }
+
+                if (!bestSym) break;
+                buyOne(bestSym);
+            }
+        }
+
+        // 1) optimize tracking (improving moves only)
+        runGreedy(null);
+
+        // 2) soft-min: drop positions below minGross, rerun greedy without reopening those
+        let dropped = null;
+        if (minGross > 0) {
+            const toDrop = new Set();
+            for (const u of universe) {
+                const cur = st.get(u.symbol);
+                if (cur.shares > 0 && cur.gross + 1e-9 < minGross) toDrop.add(u.symbol);
+            }
+            if (toDrop.size > 0) {
+                for (const sym of toDrop) st.set(sym, { shares: 0, gross: 0 });
+                runGreedy(toDrop);
+                dropped = toDrop;
+            }
+        }
+
+        // 3) spend remaining cash with minimal damage, still respecting min-per-stock when opening new symbols
+        runSweep(dropped);
+
+        // Build items
+        const items = [];
+        let spentTotal = 0;
+        let spentGross = 0;
+
+        for (const u of universe) {
+            const cur = st.get(u.symbol);
+            if (cur.shares <= 0) continue;
+
+            // (should already be true, but keep safe)
+            if (minGross > 0 && cur.gross + 1e-9 < minGross) continue;
+
+            const fee = feeFor(cur.gross, cur.shares);
+            const totalCost = cur.gross + fee;
+
+            items.push({
+                symbol: u.symbol,
+                shares: cur.shares,
+                price: u.price,
+                amountGross: cur.gross,
+                fee,
+                totalCost,
+                amount: cur.gross
+            });
+
+            spentTotal += totalCost;
+            spentGross += cur.gross;
+        }
+
+        const unallocated = Math.max(0, cash0 - spentTotal);
+        return { items, unallocated, investedGross: spentGross, investedTotal: spentTotal };
     }
 
     function portfolioAfterSuggestions(portfolioWithValues, items, totalStocksValue) {
@@ -1432,33 +1377,33 @@
             const cls = diffNewVal >= 0 ? "positive-difference" : "negative-difference";
 
             return `
-                <tr>
-                    <td>${c.symbol}</td>
-                    <td>${c.normalizedWeight.toFixed(2)}%</td>
-                    <td>${wNew.toFixed(2)}%</td>
-                    <td class="${cls}">${diffNewVal.toFixed(2)} (${diffNewPct.toFixed(2)}%)</td>
-                </tr>
-            `;
+        <tr>
+          <td>${c.symbol}</td>
+          <td>${c.normalizedWeight.toFixed(2)}%</td>
+          <td>${wNew.toFixed(2)}%</td>
+          <td class="${cls}">${diffNewVal.toFixed(2)} (${diffNewPct.toFixed(2)}%)</td>
+        </tr>
+      `;
         }).join("");
 
         afterDiv.innerHTML = `
-            <div class="spacer-24"></div>
-            <h3>Portfolio after applying suggestions</h3>
-            <div class="muted" style="margin-bottom: 10px;">
-                New stocks total: <b>${newTotal.toFixed(2)}</b> (old: ${oldTotalStocksValue.toFixed(2)}) ·
-                Invested: <b>${invested.toFixed(2)}</b> ·
-                Unallocated: <b>${suggestions.unallocated.toFixed(2)}</b>
-            </div>
-            <table>
-                <tr>
-                    <th>Symbol</th>
-                    <th>Normalized BVB Weight</th>
-                    <th>New Portfolio Weight</th>
-                    <th>New Difference (Val and %)</th>
-                </tr>
-                ${rows}
-            </table>
-        `;
+      <div class="spacer-24"></div>
+      <h3>Portfolio after applying suggestions</h3>
+      <div class="muted" style="margin-bottom:10px;">
+        New stocks total: <b>${newTotal.toFixed(2)}</b> (old: ${oldTotalStocksValue.toFixed(2)}) ·
+        Invested (gross): <b>${invested.toFixed(2)}</b> ·
+        Unallocated: <b>${suggestions.unallocated.toFixed(2)}</b>
+      </div>
+      <table>
+        <tr>
+          <th>Symbol</th>
+          <th>Normalized BVB Weight</th>
+          <th>New Portfolio Weight</th>
+          <th>New Difference (Val and %)</th>
+        </tr>
+        ${rows}
+      </table>
+    `;
     }
 </script>
 
