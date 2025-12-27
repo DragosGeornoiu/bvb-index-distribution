@@ -4,7 +4,17 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Data Coverage · BVB Index Distribution</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=2025-12-23-1" />
+    <script>
+        (function () {
+            const V = "2025-12-23-1";
+            const url = new URL(window.location.href);
+            if (!url.searchParams.has("v")) {
+                url.searchParams.set("v", V);
+                window.location.replace(url.toString());
+            }
+        })();
+    </script>
 </head>
 <body>
 
@@ -12,10 +22,10 @@
     <div class="top-nav-inner">
         <div class="top-nav-title">BVB Index Distribution</div>
         <div class="top-nav-tabs">
-            <a class="top-nav-tab" href="index.html">Tracker</a>
-            <a class="top-nav-tab" href="about.html">About</a>
-            <a class="top-nav-tab active" href="data.html">Data Coverage</a>
-            <a class="top-nav-tab" href="allocation.html">Allocation History</a>
+            <a class="top-nav-tab" href="index.html?v=2025-12-23-1">Tracker</a>
+            <a class="top-nav-tab" href="about.html?v=2025-12-23-1">About</a>
+            <a class="top-nav-tab active" href="data.html?v=2025-12-23-1">Data Coverage</a>
+            <a class="top-nav-tab" href="allocation.html?v=2025-12-23-1">Allocation History</a>
         </div>
     </div>
 </div>
