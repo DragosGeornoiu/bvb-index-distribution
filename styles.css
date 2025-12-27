@@ -17,6 +17,77 @@ h2 {
     margin: 0 auto;
 }
 
+/* Top navigation (tabs) */
+.top-nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #f4f4f9;
+    padding: 12px 20px;
+    border-bottom: 1px solid #e6e6ee;
+    margin: -20px -20px 20px -20px;
+}
+
+.top-nav-inner {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.top-nav-title {
+    font-weight: 700;
+    color: #333;
+}
+
+.top-nav-tabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.top-nav-tab {
+    text-decoration: none;
+    color: #6c63ff;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid #d9d7ff;
+    background: #ffffff;
+}
+
+.top-nav-tab:hover {
+    background: #f0efff;
+}
+
+.top-nav-tab.active {
+    background: #6c63ff;
+    color: white;
+    border-color: #6c63ff;
+}
+
+/* Generic page content */
+.page-content h2 {
+    margin-top: 10px;
+}
+
+/* Make cards match the tracker vibe (light gray panels, not bright white) */
+.card {
+    background: #f4f4f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+}
+
+.muted {
+    color: #666;
+    font-size: 13px;
+}
+
 .file-input {
     margin-bottom: 20px;
 }
@@ -33,6 +104,7 @@ h2 {
     border: 1px solid #ccc;
     padding: 10px;
     border-radius: 5px;
+    background: #f4f4f9;
 }
 
 .file-input input[type="file"] {
@@ -108,7 +180,6 @@ input[type="number"] {
     transform: translateX(25px);
 }
 
-/* Adjust label for better visual alignment */
 .toggle-container label {
     margin-right: 10px;
     font-size: 16px;
@@ -158,7 +229,7 @@ th {
 .report-container {
     display: flex;
     flex-direction: column;
-    gap: 30px; /* Controls the spacing between #report and #investmentSuggestions */
+    gap: 30px;
 }
 
 #report {
@@ -169,7 +240,7 @@ th {
     padding-top: 20px;
 }
 
-/* New Styling for Investment Suggestions */
+/* Investment Suggestions */
 #investmentSuggestions h3 {
     font-size: 24px;
     color: #333;
@@ -178,7 +249,7 @@ th {
 }
 
 #investmentSuggestions .total-investment {
-    font-size: 20px;
+    font-size: 18px;
     color: #6c63ff;
     font-weight: 600;
     margin-bottom: 20px;
@@ -193,7 +264,7 @@ th {
     list-style-type: none;
     padding-left: 0;
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr; /* 3 columns */
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 20px;
 }
 
@@ -223,15 +294,121 @@ th {
     color: #888;
 }
 
-/* Responsive design for smaller screens */
+/* Responsive */
 @media (max-width: 768px) {
     #investmentSuggestions ul {
-        grid-template-columns: 1fr 1fr; /* 2 columns on small screens */
+        grid-template-columns: 1fr 1fr;
     }
 }
 
 @media (max-width: 480px) {
     #investmentSuggestions ul {
-        grid-template-columns: 1fr; /* 1 column on extra small screens */
+        grid-template-columns: 1fr;
     }
+}
+
+/* Data Coverage page (GitHub-like calendar) */
+.coverage-calendar {
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.coverage-grid {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.coverage-row-labels {
+    display: grid;
+    grid-template-rows: repeat(7, 12px);
+    gap: 4px;
+    padding-top: 18px; /* align with month header */
+    min-width: 38px;
+}
+
+.coverage-columns {
+    display: flex;
+    gap: 4px;
+}
+
+.coverage-week {
+    display: grid;
+    grid-template-rows: 18px repeat(7, 12px); /* month label + days */
+    gap: 4px;
+}
+
+.coverage-month {
+    font-size: 11px;
+    color: #666;
+    height: 18px;
+    line-height: 18px;
+    text-align: left;
+    padding-left: 2px;
+    white-space: nowrap;
+}
+
+.coverage-cell {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid #e0e0ea;
+}
+
+/* States */
+.level-present { background: #2ea043; border-color: #2ea043; } /* GitHub-ish green */
+.level-missing { background: #d73a49; border-color: #d73a49; } /* GitHub-ish red */
+.level-future  { background: #d0d7de; border-color: #d0d7de; } /* GitHub-ish gray */
+
+.coverage-legend {
+    margin-top: 10px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.coverage-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.coverage-box {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid #e0e0ea;
+    display: inline-block;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.summary-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.file-list a {
+    color: #6c63ff;
+    text-decoration: none;
+}
+.file-list a:hover {
+    text-decoration: underline;
+}
+
+.coverage-ok {
+    color: #1c7c3d;
+    font-weight: 700;
 }

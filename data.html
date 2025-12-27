@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Data Coverage · BVB Index Distribution</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="top-nav">
+    <div class="top-nav-inner">
+        <div class="top-nav-title">BVB Index Distribution</div>
+        <div class="top-nav-tabs">
+            <a class="top-nav-tab" href="index.html">Tracker</a>
+            <a class="top-nav-tab" href="about.html">About</a>
+            <a class="top-nav-tab active" href="data.html">Data Coverage</a>
+        </div>
+    </div>
+</div>
+
+<div class="container page-content">
+    <h2>Data Coverage</h2>
+
+    <div class="card">
+        <p class="muted">
+            This page lists all daily BET snapshot files (<code>bvb-companies-YYYY-MM-DD.csv</code>) and highlights missing days.
+            It reads the repository folder: <code>input/bvb_distribution</code>.
+        </p>
+        <div class="muted">Status: <span id="status">Loading…</span></div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Index data status</h3>
+        <div class="summary-grid">
+            <div>
+                <div class="muted">Last snapshot</div>
+                <div id="statusLastDate" class="summary-value">—</div>
+            </div>
+            <div>
+                <div class="muted">Coverage status</div>
+                <div id="coverageStatus" class="summary-value">—</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Coverage calendar</h3>
+        <div id="calendar" class="coverage-calendar"></div>
+
+        <div class="coverage-legend">
+            <div class="coverage-legend-item">
+                <span class="coverage-box" style="background:#2ea043;border-color:#2ea043;"></span>
+                <span class="muted">present</span>
+            </div>
+            <div class="coverage-legend-item">
+                <span class="coverage-box" style="background:#d73a49;border-color:#d73a49;"></span>
+                <span class="muted">missing (past day)</span>
+            </div>
+            <div class="coverage-legend-item">
+                <span class="coverage-box" style="background:#d0d7de;border-color:#d0d7de;"></span>
+                <span class="muted">not tracked yet / future</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Summary</h3>
+        <div class="summary-grid">
+            <div><div class="muted">First date</div><div id="firstDate" class="summary-value">—</div></div>
+            <div><div class="muted">Last date</div><div id="lastDate" class="summary-value">—</div></div>
+            <div><div class="muted">Days present</div><div id="presentCount" class="summary-value">—</div></div>
+            <div><div class="muted">Missing days</div><div id="missingCount" class="summary-value">—</div></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">Missing days</h3>
+        <div id="missingDays" class="muted">—</div>
+    </div>
+
+    <div class="card">
+        <h3 style="margin-top:0;">All snapshots</h3>
+        <div id="fileList" class="file-list muted">—</div>
+    </div>
+</div>
+
+<script>
+    const OWNER = "DragosGeornoiu";
+    const REPO = "bvb-index-distribution";
+    const FOLDER_PATH = "input/bvb_distribution";
+    const FILE_REGEX = /^bvb-companies-(\d{4})-(\d{2})-(\d{2})\.csv$/;
+
+    // Keep columns equal-width, regardless of month label presence
+    const CELL_PX = 14;
+    const COL_PX = 28;
+    const V_GAP_PX = 3;
+
+    const statusEl = document.getElementById("status");
+    const calendarEl = document.getElementById("calendar");
+    const fileListEl = document.getElementById("fileList");
+    const missingDaysEl = document.getElementById("missingDays");
+
+    const firstDateEl = document.getElementById("firstDate");
+    const lastDateEl = document.getElementById("lastDate");
+    const presentCountEl = document.getElementById("presentCount");
+    const missingCountEl = document.getElementById("missingCount");
+
+    const statusLastDateEl = document.getElementById("statusLastDate");
+    const coverageStatusEl = document.getElementById("coverageStatus");
+
+    function isoDate(d) {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, "0");
+        const day = String(d.getDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+    }
+
+    function parseISODate(s) {
+        const [y, m, d] = s.split("-").map(Number);
+        return new Date(y, m - 1, d);
+    }
+
+    function addDays(d, n) {
+        const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        x.setDate(x.getDate() + n);
+        return x;
+    }
+
+    function startOfWeekMonday(d) {
+        const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const day = (x.getDay() + 6) % 7;
+        return addDays(x, -day);
+    }
+
+    function firstOfMonth(d) {
+        return new Date(d.getFullYear(), d.getMonth(), 1);
+    }
+
+    function endOfMonth(d) {
+        return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    }
+
+    function monthShortName(m) {
+        return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m];
+    }
+
+    function daysBetween(a, b) {
+        const ms = 24 * 60 * 60 * 1000;
+        return Math.floor((b - a) / ms);
+    }
+
+    async function loadFolderListing() {
+        const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER_PATH}`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`GitHub API error: ${resp.status}`);
+        return await resp.json();
+    }
+
+    function extractDates(files) {
+        const dates = [];
+        const fileByDate = new Map();
+
+        for (const f of files) {
+            const m = f.name.match(FILE_REGEX);
+            if (!m) continue;
+            const dateStr = `${m[1]}-${m[2]}-${m[3]}`;
+            dates.push(dateStr);
+            fileByDate.set(dateStr, f.html_url);
+        }
+
+        dates.sort();
+        return { dates, fileByDate };
+    }
+
+    function computeMissing(dates, todayISO) {
+        if (dates.length === 0) return [];
+
+        const present = new Set(dates);
+        const first = parseISODate(dates[0]);
+        const today = parseISODate(todayISO);
+        const missing = [];
+
+        for (let d = new Date(first); d < today; d = addDays(d, 1)) {
+            const key = isoDate(d);
+            if (!present.has(key)) missing.push(key);
+        }
+
+        return missing;
+    }
+
+    function renderCoverageStatus(dates, missing) {
+        if (dates.length === 0) {
+            coverageStatusEl.textContent = "No data available";
+            coverageStatusEl.style.color = "#d73a49";
+            return;
+        }
+
+        const last = parseISODate(dates[dates.length - 1]);
+        const today = new Date();
+        const daysSinceLast = daysBetween(last, today);
+
+        if (missing.length > 0) {
+            coverageStatusEl.textContent = "Missing past days detected";
+            coverageStatusEl.style.color = "#d73a49";
+        } else if (daysSinceLast > 1) {
+            coverageStatusEl.textContent = "Index data not updated recently";
+            coverageStatusEl.style.color = "#d29922";
+        } else {
+            coverageStatusEl.textContent = "All expected days are covered";
+            coverageStatusEl.style.color = "#2ea043";
+        }
+    }
+
+    function monthLabelForWeek(weekStartMonday) {
+        for (let i = 0; i < 7; i++) {
+            const d = addDays(weekStartMonday, i);
+            if (d.getDate() === 1) return monthShortName(d.getMonth());
+        }
+        return "";
+    }
+
+    function renderCalendar(dates) {
+        calendarEl.innerHTML = "";
+        if (dates.length === 0) return;
+
+        const present = new Set(dates);
+        const firstSnapshot = parseISODate(dates[0]);
+        const today = new Date();
+        const todayISO = isoDate(today);
+
+        const startMonth = firstOfMonth(firstSnapshot);
+        const endMonth = endOfMonth(today);
+
+        const gridStart = startOfWeekMonday(startMonth);
+        const gridEnd = addDays(startOfWeekMonday(endMonth), 6);
+
+        const weeks = [];
+        for (let d = new Date(gridStart); d <= gridEnd; d = addDays(d, 7)) {
+            weeks.push(new Date(d));
+        }
+
+        const grid = document.createElement("div");
+        grid.className = "coverage-grid";
+
+        // Keep your original row label column (this is part of the "nice" look)
+        const labels = document.createElement("div");
+        labels.className = "coverage-row-labels";
+        labels.innerHTML = `
+      <div class="muted">Mon</div>
+      <div class="muted"></div>
+      <div class="muted">Wed</div>
+      <div class="muted"></div>
+      <div class="muted">Fri</div>
+      <div class="muted"></div>
+      <div class="muted">Sun</div>
+    `;
+
+        const columns = document.createElement("div");
+        columns.className = "coverage-columns";
+
+        for (const wStart of weeks) {
+            const col = document.createElement("div");
+            col.className = "coverage-week";
+
+            // Force equal width per week column
+            col.style.width = `${COL_PX}px`;
+            col.style.minWidth = `${COL_PX}px`;
+            col.style.maxWidth = `${COL_PX}px`;
+
+            // Month label (reserve identical width for all columns)
+            const label = monthLabelForWeek(wStart);
+            const monthEl = document.createElement("div");
+            monthEl.className = "coverage-month";
+            monthEl.textContent = label || "   ";
+            monthEl.style.width = `${COL_PX}px`;
+            monthEl.style.minWidth = `${COL_PX}px`;
+            monthEl.style.maxWidth = `${COL_PX}px`;
+            monthEl.style.height = "16px";
+            monthEl.style.lineHeight = "16px";
+            monthEl.style.textAlign = "center";
+            monthEl.style.whiteSpace = "nowrap";
+            col.appendChild(monthEl);
+
+            // Day cells
+            for (let i = 0; i < 7; i++) {
+                const day = addDays(wStart, i);
+                const key = isoDate(day);
+
+                const cell = document.createElement("div");
+                cell.style.width = `${CELL_PX}px`;
+                cell.style.height = `${CELL_PX}px`;
+                cell.style.marginBottom = `${V_GAP_PX}px`; // ✅ restore vertical rhythm
+                cell.style.boxSizing = "border-box";       // avoids size creep
+
+                if (present.has(key)) {
+                    cell.className = "coverage-cell level-present";
+                    cell.title = `${key} (present)`;
+                } else if (day < firstSnapshot) {
+                    cell.className = "coverage-cell level-future";
+                    cell.title = `${key} (not tracked yet)`;
+                } else if (key < todayISO) {
+                    cell.className = "coverage-cell level-missing";
+                    cell.title = `${key} (missing)`;
+                } else {
+                    cell.className = "coverage-cell level-future";
+                    cell.title = `${key} (future)`;
+                }
+
+                col.appendChild(cell);
+            }
+
+            columns.appendChild(col);
+        }
+
+        grid.appendChild(labels);
+        grid.appendChild(columns);
+        calendarEl.appendChild(grid);
+    }
+
+    function renderMissing(missing) {
+        if (!missing || missing.length === 0) {
+            missingDaysEl.innerHTML = `<span class="coverage-ok">No missing days detected ✅</span>`;
+            return;
+        }
+        missingDaysEl.innerHTML = missing.map(d => `<div>${d}</div>`).join("");
+    }
+
+    function renderFileList(dates, fileByDate) {
+        if (!dates.length) {
+            fileListEl.textContent = "No snapshot files found yet.";
+            return;
+        }
+
+        fileListEl.innerHTML = dates
+            .slice()
+            .reverse()
+            .map(d => `<div>• <a href="${fileByDate.get(d)}" target="_blank" rel="noopener noreferrer">${d}</a></div>`)
+            .join("");
+    }
+
+    (async function init() {
+        try {
+            statusEl.textContent = "Loading…";
+
+            const files = await loadFolderListing();
+            const { dates, fileByDate } = extractDates(files);
+
+            const todayISO = isoDate(new Date());
+            const missing = computeMissing(dates, todayISO);
+
+            statusEl.textContent = "Loaded ✅";
+
+            firstDateEl.textContent = dates[0] || "—";
+            lastDateEl.textContent = dates[dates.length - 1] || "—";
+            presentCountEl.textContent = String(dates.length);
+            missingCountEl.textContent = String(missing.length);
+
+            statusLastDateEl.textContent = dates[dates.length - 1] || "—";
+            renderCoverageStatus(dates, missing);
+
+            renderCalendar(dates);
+            renderMissing(missing);
+            renderFileList(dates, fileByDate);
+        } catch (e) {
+            console.error(e);
+            statusEl.textContent = "Failed ❌";
+            calendarEl.innerHTML = `<div class="muted">Could not load data coverage.</div>`;
+            fileListEl.textContent = "—";
+            missingDaysEl.textContent = "—";
+        }
+    })();
+</script>
+
+</body>
+</html>

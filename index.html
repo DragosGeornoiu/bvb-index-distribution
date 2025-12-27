@@ -1,166 +1,431 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>BVB Portfolio Tracker</title>
-   <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        /* Make readonly inputs clearly non-editable */
+        input[readonly] {
+            background-color: #eee;
+            color: #666;
+            cursor: not-allowed;
+        }
+
+        .muted { font-size: 13px; color: #666; }
+        .spacer-16 { height: 16px; }
+        .spacer-24 { height: 24px; }
+    </style>
 </head>
 <body>
+
+<!-- Top navigation -->
+<div class="top-nav">
+    <div class="top-nav-inner">
+        <div class="top-nav-title">BVB Index Distribution</div>
+        <div class="top-nav-tabs">
+            <a class="top-nav-tab active" href="index.html">Tracker</a>
+            <a class="top-nav-tab" href="about.html">About</a>
+            <a class="top-nav-tab" href="data.html">Data Coverage</a>
+        </div>
+    </div>
+</div>
 
 <h2>BVB Portfolio Tracker</h2>
 
 <div class="container">
-    <!-- File Inputs -->
+
+    <!-- BVB CSV Source (auto) -->
     <div class="file-input section">
-        <label for="bvbFile">Upload BVB Companies CSV</label>
-        <div class="file-wrapper">
-            <label for="bvbFile" class="file-label">Choose file</label>
-            <input type="file" id="bvbFile" accept=".csv">
-            <span class="file-name" id="bvbFileName">No file chosen</span>
+        <label>BVB Companies CSV</label>
+        <div class="file-wrapper" style="justify-content: space-between;">
+            <span class="file-name" id="bvbSourceStatus">
+                Using latest from repository: <b>bvb-companies-latest.csv</b>
+            </span>
+            <a
+                    href="input/bvb_distribution/bvb-companies-latest.csv"
+                    class="file-label"
+                    style="text-decoration: none; display: inline-block;"
+                    target="_blank"
+                    rel="noopener noreferrer"
+            >
+                Open latest
+            </a>
+        </div>
+        <div style="margin-top: 8px;" class="muted">
+            Status: <span id="bvbLoadStatus">Will be loaded on Generate Report</span>
         </div>
     </div>
 
+    <!-- Portfolio CSV -->
     <div class="file-input section">
-        <label for="portfolioFile">Upload Current Portfolio CSV</label>
+        <label for="portfolioFile">Upload Current Portfolio CSV (symbol,value)</label>
         <div class="file-wrapper">
             <label for="portfolioFile" class="file-label">Choose file</label>
-            <input type="file" id="portfolioFile" accept=".csv">
+            <input type="file" id="portfolioFile" accept=".csv,.txt" />
             <span class="file-name" id="portfolioFileName">No file chosen</span>
+        </div>
+        <div style="margin-top: 8px;" class="muted">
+            Expected headers: <b>symbol,value</b>. Use <b>CASH_VALUE</b> row for available cash
+            (e.g. <code>CASH_VALUE,12023.80</code>).
+        </div>
+        <div style="margin-top: 6px;" class="muted">
+            Detected: <span id="portfolioParseStatus">No file loaded</span>
         </div>
     </div>
 
-    <!-- Portfolio Total Investment -->
+    <!-- Total Portfolio Value (stocks-only) -->
     <div class="input-group section">
-        <label for="totalInvestment">Total Portfolio Value</label>
-        <input type="number" id="totalInvestment" placeholder="Enter total portfolio value">
+        <label for="totalInvestment">Total Portfolio Value (stocks-only, auto from CSV)</label>
+        <input
+                type="number"
+                id="totalInvestment"
+                placeholder="Auto-filled from portfolio CSV"
+                readonly
+        />
+        <div style="margin-top: 6px;" class="muted">
+            This excludes CASH_VALUE so cash won’t influence stock weights.
+        </div>
     </div>
 
     <!-- Filter Portfolio Toggle -->
     <div class="toggle-container section">
         <label for="filterPortfolioToggle">Only consider companies in my portfolio</label>
-        <input type="checkbox" id="filterPortfolioToggle" checked>
+        <input type="checkbox" id="filterPortfolioToggle" checked />
     </div>
 
     <!-- New Investment Toggle -->
     <div class="toggle-container section">
         <label for="newInvestmentToggle">Enable New Investment</label>
-        <input type="checkbox" id="newInvestmentToggle">
+        <input type="checkbox" id="newInvestmentToggle" />
     </div>
 
     <!-- New Investment Inputs -->
     <div id="investmentFields" style="display: none;" class="section">
         <div class="input-group">
-            <label for="newInvestmentAmount">New Investment Amount</label>
-            <input type="number" id="newInvestmentAmount" placeholder="Enter new investment amount">
+            <label for="newInvestmentAmount">New Investment Amount (auto from CASH_VALUE)</label>
+            <input type="number" id="newInvestmentAmount" placeholder="Enter new investment amount" />
         </div>
 
         <div class="input-group">
             <label for="minInvestmentAmount">Minimum Investment per Stock</label>
-            <input type="number" id="minInvestmentAmount" placeholder="Enter minimum investment per stock">
+            <input type="number" id="minInvestmentAmount" placeholder="Enter minimum investment per stock" value="500" />
         </div>
+
+        <div class="muted">Suggestions are rounded down to <b>50</b> so total never exceeds available cash.</div>
+        <div class="spacer-16"></div>
     </div>
 
     <button id="generateReport">Generate Report</button>
 
-    <!-- Report and Investment Suggestions -->
     <div class="report-container">
-        <!-- Report section -->
         <div id="report"></div>
-
-        <!-- Investment suggestions section -->
         <div id="investmentSuggestions"></div>
+        <div id="afterSuggestions"></div>
     </div>
 </div>
 
 <script>
-    document.getElementById('bvbFile').addEventListener('change', function() {
-        const fileName = this.files.length > 0 ? this.files[0].name : "No file chosen";
-        document.getElementById('bvbFileName').textContent = fileName;
+    const BVB_LATEST_CSV_URL = "input/bvb_distribution/bvb-companies-latest.csv";
+
+    // Round allocation lots to this amount (RON, or your chosen base currency)
+    const SUGGESTION_ROUND_STEP = 50;
+
+    const bvbLoadStatusEl = document.getElementById("bvbLoadStatus");
+    const portfolioParseStatusEl = document.getElementById("portfolioParseStatus");
+    const totalInvestmentEl = document.getElementById("totalInvestment");
+    const newInvestmentAmountEl = document.getElementById("newInvestmentAmount");
+
+    let parsedPortfolio = null;
+
+    document.getElementById("newInvestmentToggle").addEventListener("change", function () {
+        document.getElementById("investmentFields").style.display = this.checked ? "block" : "none";
     });
 
-    document.getElementById('portfolioFile').addEventListener('change', function() {
-        const fileName = this.files.length > 0 ? this.files[0].name : "No file chosen";
-        document.getElementById('portfolioFileName').textContent = fileName;
-    });
+    document.getElementById("portfolioFile").addEventListener("change", function () {
+        const file = this.files[0];
+        document.getElementById("portfolioFileName").textContent = file ? file.name : "No file chosen";
 
-    document.getElementById('newInvestmentToggle').addEventListener('change', function() {
-        document.getElementById('investmentFields').style.display = this.checked ? 'block' : 'none';
-    });
+        parsedPortfolio = null;
+        portfolioParseStatusEl.textContent = "Parsing...";
+        totalInvestmentEl.value = "";
+        newInvestmentAmountEl.value = "";
 
-    document.getElementById('generateReport').addEventListener('click', function() {
-        const bvbFile = document.getElementById('bvbFile').files[0];
-        const portfolioFile = document.getElementById('portfolioFile').files[0];
-        const totalInvestment = parseFloat(document.getElementById('totalInvestment').value);
-        const onlyPortfolioCompanies = document.getElementById('filterPortfolioToggle').checked;
-        const newInvestment = document.getElementById('newInvestmentToggle').checked
-            ? parseFloat(document.getElementById('newInvestmentAmount').value)
-            : 0;
-        const minInvestmentAmount = document.getElementById('newInvestmentToggle').checked
-            ? parseFloat(document.getElementById('minInvestmentAmount').value)
-            : 0;
-
-        if (!bvbFile || !portfolioFile || isNaN(totalInvestment)) {
-            alert('Please upload both files and enter the total portfolio value.');
+        if (!file) {
+            portfolioParseStatusEl.textContent = "No file loaded";
             return;
         }
 
-        const reader1 = new FileReader();
-        const reader2 = new FileReader();
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            try {
+                const rows = parseCSV(event.target.result);
 
-        reader1.onload = function(event) {
-            const bvbData = parseCSV(event.target.result);
-            reader2.onload = function(event) {
-                const portfolioData = parseCSV(event.target.result);
-                generateReport(bvbData, portfolioData, totalInvestment, onlyPortfolioCompanies, newInvestment, minInvestmentAmount);
-            };
-            reader2.readAsText(portfolioFile);
+                const hasValue = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "value");
+                if (!hasValue) throw new Error("Portfolio CSV must contain headers: symbol,value");
+
+                const { portfolio, totalStocksValue, cashValue, totalAllValue } = portfolioValues(rows);
+
+                parsedPortfolio = { portfolio, totalStocksValue, cashValue, totalAllValue };
+
+                totalInvestmentEl.value = totalStocksValue.toFixed(2);
+
+                if (cashValue > 0) {
+                    newInvestmentAmountEl.value = cashValue.toFixed(2);
+                    portfolioParseStatusEl.textContent =
+                        `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, CASH_VALUE: ${cashValue.toFixed(2)})`;
+                } else {
+                    portfolioParseStatusEl.textContent =
+                        `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no CASH_VALUE row found)`;
+                }
+            } catch (e) {
+                console.error(e);
+                portfolioParseStatusEl.textContent = "Failed ❌";
+                alert(`Could not parse portfolio CSV: ${e.message}`);
+            }
         };
-
-        reader1.readAsText(bvbFile);
+        reader.readAsText(file);
     });
 
-    function parseCSV(data) {
-        const rows = data.split("\n").filter(row => row.trim() !== "");
-        const headers = rows.shift().split(",");
-        return rows.map(row => {
-            const values = row.split(",");
-            return headers.reduce((acc, header, i) => {
-                acc[header.trim()] = isNaN(values[i]) ? values[i].trim() : parseFloat(values[i].trim());
-                return acc;
-            }, {});
-        });
-    }
-
-    function generateReport(bvbData, portfolioData, totalInvestment, onlyPortfolioCompanies, newInvestment, minInvestmentAmount) {
-        const reportDiv = document.getElementById('report');
-        let normalizedData = bvbData;
-
-        if (onlyPortfolioCompanies) {
-            normalizedData = bvbData.filter(bvb => portfolioData.some(portfolio => portfolio.symbol === bvb.symbol));
+    document.getElementById("generateReport").addEventListener("click", async function () {
+        if (!parsedPortfolio) {
+            alert("Please upload the portfolio file (symbol,value).");
+            return;
         }
 
-        const totalWeight = normalizedData.reduce((sum, company) => sum + company.weight, 0);
-        normalizedData = normalizedData.map(company => ({
-            ...company,
-            normalizedWeight: (company.weight / totalWeight) * 100
+        const onlyPortfolioCompanies = document.getElementById("filterPortfolioToggle").checked;
+
+        const totalStocksValue = Number(totalInvestmentEl.value);
+        if (!Number.isFinite(totalStocksValue) || totalStocksValue <= 0) {
+            alert("Total Portfolio Value (stocks-only) is missing or invalid.");
+            return;
+        }
+
+        const newInvestmentEnabled = document.getElementById("newInvestmentToggle").checked;
+        const newInvestment = newInvestmentEnabled ? Number(document.getElementById("newInvestmentAmount").value) : 0;
+        const minInvestmentAmount = newInvestmentEnabled ? Number(document.getElementById("minInvestmentAmount").value) : 0;
+
+        if (newInvestmentEnabled && (!Number.isFinite(newInvestment) || newInvestment <= 0)) {
+            alert("Please enter a valid New Investment Amount.");
+            return;
+        }
+        if (newInvestmentEnabled && (!Number.isFinite(minInvestmentAmount) || minInvestmentAmount < 0)) {
+            alert("Please enter a valid Minimum Investment per Stock.");
+            return;
+        }
+
+        // Load BVB latest CSV on demand
+        bvbLoadStatusEl.textContent = "Loading...";
+        let bvbText;
+        try {
+            const cacheBuster = `t=${Date.now()}`;
+            const resp = await fetch(`${BVB_LATEST_CSV_URL}?${cacheBuster}`, { cache: "no-store" });
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            bvbText = await resp.text();
+            bvbLoadStatusEl.textContent = "Loaded ✅";
+        } catch (e) {
+            console.error(e);
+            bvbLoadStatusEl.textContent = "Failed ❌";
+            alert("Could not load the latest BVB companies file from the repository.");
+            return;
+        }
+
+        const bvbData = parseCSV(bvbText);
+
+        generateReportAndSuggestions(
+            bvbData,
+            parsedPortfolio.portfolio,
+            parsedPortfolio.totalStocksValue,
+            onlyPortfolioCompanies,
+            newInvestmentEnabled ? newInvestment : 0,
+            newInvestmentEnabled ? minInvestmentAmount : 0
+        );
+    });
+
+    // ----------------------------
+    // CSV parsing (comma/semicolon/tab + basic quoting)
+    // ----------------------------
+    function detectDelimiter(headerLine) {
+        const commaCount = (headerLine.match(/,/g) || []).length;
+        const semiCount = (headerLine.match(/;/g) || []).length;
+        const tabCount = (headerLine.match(/\t/g) || []).length;
+
+        if (tabCount > commaCount && tabCount > semiCount) return "\t";
+        if (semiCount > commaCount) return ";";
+        return ",";
+    }
+
+    function splitCsvLine(line, delimiter) {
+        const out = [];
+        let cur = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+
+            if (ch === '"') {
+                const next = line[i + 1];
+                if (inQuotes && next === '"') {
+                    cur += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
+                }
+                continue;
+            }
+
+            if (!inQuotes && ch === delimiter) {
+                out.push(cur);
+                cur = "";
+                continue;
+            }
+
+            cur += ch;
+        }
+        out.push(cur);
+        return out.map(v => v.trim());
+    }
+
+    function toNumberMaybe(raw) {
+        if (raw == null) return raw;
+        const s = String(raw).trim();
+        if (s === "") return s;
+
+        const noPct = s.replace(/%/g, "").trim();
+        const normalized = noPct.replace(/\s/g, "");
+        const n = Number(normalized);
+        if (!Number.isNaN(n)) return n;
+
+        const commaDecimal = normalized.replace(",", ".");
+        const n2 = Number(commaDecimal);
+        if (!Number.isNaN(n2)) return n2;
+
+        return s;
+    }
+
+    function parseCSV(data) {
+        const lines = data
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l !== "" && !l.startsWith("#"));
+
+        if (lines.length === 0) return [];
+
+        const delimiter = detectDelimiter(lines[0]);
+        const headers = splitCsvLine(lines[0], delimiter).map(h => h.trim());
+
+        const rows = [];
+        for (let i = 1; i < lines.length; i++) {
+            const values = splitCsvLine(lines[i], delimiter);
+
+            const obj = {};
+            headers.forEach((h, idx) => {
+                obj[h] = toNumberMaybe(values[idx] ?? "");
+            });
+
+            // Header normalization
+            if (obj.Symbol && !obj.symbol) obj.symbol = obj.Symbol;
+            if (obj.VALUE && !obj.value) obj.value = obj.VALUE;
+
+            rows.push(obj);
+        }
+        return rows;
+    }
+
+    // ----------------------------
+    // Portfolio values -> weights (stocks-only)
+    // ----------------------------
+    function portfolioValues(rows) {
+        const cleaned = rows
+            .map(r => ({
+                symbol: String(r.symbol ?? "").trim(),
+                value: Number(r.value)
+            }))
+            .filter(r => r.symbol !== "" && Number.isFinite(r.value));
+
+        const cashSymbols = new Set(["CASH_VALUE", "CASH", "CASH_RON", "RON"]);
+        const cashRows = cleaned.filter(r => cashSymbols.has(r.symbol.toUpperCase()));
+        const stockRows = cleaned.filter(r => !cashSymbols.has(r.symbol.toUpperCase()));
+
+        const cashValue = cashRows.reduce((s, r) => s + r.value, 0);
+        const totalStocksValue = stockRows.reduce((s, r) => s + r.value, 0);
+        const totalAllValue = totalStocksValue + cashValue;
+
+        if (totalStocksValue <= 0) throw new Error("Total stocks value is 0.");
+
+        const portfolio = stockRows.map(r => ({
+            symbol: r.symbol,
+            value: r.value,
+            weight: (r.value / totalStocksValue) * 100
         }));
 
-        const rows = normalizedData.map(company => {
-            const portfolioCompany = portfolioData.find(p => p.symbol === company.symbol) || { weight: 0 };
-            const difference = ((portfolioCompany.weight - company.normalizedWeight) / 100) * totalInvestment;
-            const differencePercent = portfolioCompany.weight - company.normalizedWeight;
-            const differenceClass = difference >= 0 ? 'positive-difference' : 'negative-difference';
+        return { portfolio, totalStocksValue, cashValue, totalAllValue };
+    }
+
+    function formatZeroNoMinus(x) {
+        // Avoid displaying "-0.00"
+        if (Math.abs(x) < 0.005) return "0.00";
+        return x.toFixed(2);
+    }
+
+    // ----------------------------
+    // Main report + suggestions + simulation table
+    // ----------------------------
+    function generateReportAndSuggestions(
+        bvbData,
+        portfolioWithValues,
+        totalStocksValue,
+        onlyPortfolioCompanies,
+        newInvestment,
+        minInvestmentAmount
+    ) {
+        const reportDiv = document.getElementById("report");
+        const suggestionsDiv = document.getElementById("investmentSuggestions");
+        const afterDiv = document.getElementById("afterSuggestions");
+
+        suggestionsDiv.innerHTML = "";
+        afterDiv.innerHTML = "";
+
+        // Determine the BVB universe to compare against
+        let bvbUniverse = bvbData;
+        if (onlyPortfolioCompanies) {
+            const owned = new Set(portfolioWithValues.map(p => p.symbol));
+            bvbUniverse = bvbData.filter(b => owned.has(b.symbol));
+        }
+
+        // Normalize BVB weights to 100% for the current universe
+        const totalBvbWeight = bvbUniverse.reduce((sum, c) => sum + (Number(c.weight) || 0), 0);
+        const normalizedBvb = bvbUniverse.map(c => ({
+            symbol: c.symbol,
+            bvbWeight: Number(c.weight) || 0,
+            normalizedWeight: ((Number(c.weight) || 0) / totalBvbWeight) * 100
+        }));
+
+        // Render comparison table and compute sum of diffs as a sanity check
+        let sumDiff = 0;
+        const rowsHtml = normalizedBvb.map(c => {
+            const p = portfolioWithValues.find(x => x.symbol === c.symbol);
+            const pWeight = p ? p.weight : 0;
+
+            const diffPercent = pWeight - c.normalizedWeight;
+            const diffValue = (diffPercent / 100) * totalStocksValue;
+            sumDiff += diffValue;
+
+            const cls = diffValue >= 0 ? "positive-difference" : "negative-difference";
+
             return `
                 <tr>
-                    <td>${company.symbol}</td>
-                    <td>${company.weight.toFixed(2)}%</td>
-                    <td>${company.normalizedWeight.toFixed(2)}%</td>
-                    <td>${portfolioCompany.weight.toFixed(2)}%</td>
-                    <td class="${differenceClass}">${difference.toFixed(2)} (${differencePercent.toFixed(2)}%)</td>
+                    <td>${c.symbol}</td>
+                    <td>${c.bvbWeight.toFixed(2)}%</td>
+                    <td>${c.normalizedWeight.toFixed(2)}%</td>
+                    <td>${pWeight.toFixed(2)}%</td>
+                    <td class="${cls}">${diffValue.toFixed(2)} (${diffPercent.toFixed(2)}%)</td>
                 </tr>
             `;
-        }).join('');
+        }).join("");
 
         reportDiv.innerHTML = `
             <h3>Portfolio Comparison</h3>
@@ -172,191 +437,237 @@
                     <th>Portfolio Weight</th>
                     <th>Difference (Val and %)</th>
                 </tr>
+                ${rowsHtml}
+            </table>
+            <div style="margin-top: 10px;" class="muted">
+                Sanity check: Σ Difference ≈ <b>${formatZeroNoMinus(sumDiff)}</b>
+            </div>
+        `;
+
+        if (!(newInvestment > 0)) return;
+
+        const suggestions = computeSuggestions(
+            normalizedBvb,
+            portfolioWithValues,
+            totalStocksValue,
+            newInvestment,
+            minInvestmentAmount,
+            SUGGESTION_ROUND_STEP
+        );
+
+        const allocated = suggestions.items.reduce((s, x) => s + x.amount, 0);
+
+        // Render suggestion cards
+        const listItems = suggestions.items.map(it => `
+            <li>
+                <div class="investment-symbol">${it.symbol}</div>
+                <div class="investment-amount">${it.amount.toFixed(2)}</div>
+            </li>
+        `).join("");
+
+        suggestionsDiv.innerHTML = `
+            <h3>Investment Suggestions</h3>
+            <div class="total-investment">
+                Available: ${newInvestment.toFixed(2)} · Allocated: ${allocated.toFixed(2)} · Unallocated: ${suggestions.unallocated.toFixed(2)}
+            </div>
+            <ul>
+                ${listItems}
+            </ul>
+        `;
+
+        // Simulate portfolio after applying suggestions
+        const after = portfolioAfterSuggestions(portfolioWithValues, suggestions.items, totalStocksValue);
+        renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions);
+    }
+
+    // ----------------------------
+    // Suggestion algorithm (buy-only)
+    // ----------------------------
+    function computeSuggestions(normalizedBvb, portfolioWithValues, totalStocksValue, cashToInvest, minPerStock, roundStep) {
+        const currentValueBySymbol = new Map(portfolioWithValues.map(p => [p.symbol, p.value]));
+
+        // Target weights as fractions
+        const targets = normalizedBvb.map(c => ({
+            symbol: c.symbol,
+            t: c.normalizedWeight / 100
+        }));
+
+        // Compute positive gaps to reach target if we can only buy (no selling)
+        const V = totalStocksValue;
+        const C = cashToInvest;
+
+        const gaps = targets.map(x => {
+            const v = currentValueBySymbol.get(x.symbol) || 0;
+            const desired = (V + C) * x.t;
+            const gap = Math.max(0, desired - v);
+            return { symbol: x.symbol, gap };
+        });
+
+        const totalGap = gaps.reduce((s, g) => s + g.gap, 0);
+        if (totalGap <= 0) return { items: [], unallocated: C };
+
+        // Proportional allocation
+        let allocations = gaps.map(g => ({ symbol: g.symbol, amount: (g.gap / totalGap) * C }));
+
+        // Minimum per stock (iteratively remove too-small allocations and redistribute)
+        allocations = enforceMinimum(allocations, C, minPerStock);
+
+        // Round down to steps and then distribute leftover steps without exceeding cash
+        allocations = roundAllocationsDownAndDistribute(allocations, C, roundStep);
+
+        const allocatedSum = allocations.reduce((s, a) => s + a.amount, 0);
+        const unallocated = Math.max(0, C - allocatedSum);
+
+        return {
+            items: allocations.filter(a => a.amount > 0),
+            unallocated
+        };
+    }
+
+    function enforceMinimum(allocations, totalCash, minPerStock) {
+        if (!minPerStock || minPerStock <= 0) return allocations;
+
+        // If total cash can't meet the minimum, allocate everything to the top candidate
+        if (totalCash < minPerStock) {
+            const max = allocations.reduce((best, a) => (a.amount > best.amount ? a : best), allocations[0]);
+            return allocations.map(a => ({ symbol: a.symbol, amount: a.symbol === max.symbol ? totalCash : 0 }));
+        }
+
+        let active = allocations.slice();
+
+        while (true) {
+            const small = active.filter(a => a.amount > 0 && a.amount < minPerStock);
+            if (small.length === 0) break;
+
+            const smallSum = small.reduce((s, a) => s + a.amount, 0);
+            active = active.map(a => (a.amount < minPerStock ? { ...a, amount: 0 } : a));
+
+            const remaining = active.filter(a => a.amount > 0);
+            if (remaining.length === 0) return active;
+
+            const remSum = remaining.reduce((s, a) => s + a.amount, 0);
+
+            active = active.map(a => {
+                if (a.amount <= 0) return a;
+                const extra = (a.amount / remSum) * smallSum;
+                return { ...a, amount: a.amount + extra };
+            });
+        }
+
+        // Normalize to avoid float drift
+        const sum = active.reduce((s, a) => s + a.amount, 0);
+        const scale = sum > 0 ? (totalCash / sum) : 1;
+        return active.map(a => ({ ...a, amount: a.amount * scale }));
+    }
+
+    function roundAllocationsDownAndDistribute(allocations, totalCash, step) {
+        if (!step || step <= 1) return allocations;
+
+        // 1) Round down so the sum never exceeds totalCash
+        let rounded = allocations.map(a => ({
+            symbol: a.symbol,
+            amount: a.amount > 0 ? Math.floor(a.amount / step) * step : 0
+        }));
+
+        // 2) Distribute leftover in +step chunks, still never exceeding totalCash
+        let sum = rounded.reduce((s, a) => s + a.amount, 0);
+        let leftover = totalCash - sum;
+
+        if (leftover < step) return rounded;
+
+        // Add to the largest allocations first
+        const order = rounded
+            .map((a, idx) => ({ ...a, idx }))
+            .filter(a => a.amount > 0)
+            .sort((a, b) => b.amount - a.amount);
+
+        if (order.length === 0) return rounded;
+
+        let i = 0;
+        while (leftover >= step - 0.0001) {
+            const target = order[i % order.length];
+            rounded[target.idx].amount += step;
+            leftover -= step;
+            i++;
+
+            // Safety guard in case of floating point drift
+            const checkSum = rounded.reduce((s2, x) => s2 + x.amount, 0);
+            if (checkSum > totalCash + 0.0001) {
+                rounded[target.idx].amount -= step;
+                break;
+            }
+        }
+
+        return rounded;
+    }
+
+    // ----------------------------
+    // After-suggestions simulation
+    // ----------------------------
+    function portfolioAfterSuggestions(portfolioWithValues, items, totalStocksValue) {
+        const map = new Map(portfolioWithValues.map(p => [p.symbol, { ...p }]));
+
+        for (const it of items) {
+            const existing = map.get(it.symbol);
+            if (existing) {
+                existing.value += it.amount;
+            } else {
+                map.set(it.symbol, { symbol: it.symbol, value: it.amount, weight: 0 });
+            }
+        }
+
+        const invested = items.reduce((s, it) => s + it.amount, 0);
+        const newTotal = totalStocksValue + invested;
+
+        const list = Array.from(map.values()).map(p => ({
+            symbol: p.symbol,
+            value: p.value,
+            weight: (p.value / newTotal) * 100
+        }));
+
+        return { list, newTotal, invested };
+    }
+
+    function renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, oldTotalStocksValue, suggestions) {
+        const { list, newTotal, invested } = after;
+
+        const newW = new Map(list.map(x => [x.symbol, x.weight]));
+
+        const rows = normalizedBvb.map(c => {
+            const wNew = newW.get(c.symbol) || 0;
+            const diffNewPct = wNew - c.normalizedWeight;
+            const diffNewVal = (diffNewPct / 100) * newTotal;
+            const cls = diffNewVal >= 0 ? "positive-difference" : "negative-difference";
+
+            return `
+                <tr>
+                    <td>${c.symbol}</td>
+                    <td>${c.normalizedWeight.toFixed(2)}%</td>
+                    <td>${wNew.toFixed(2)}%</td>
+                    <td class="${cls}">${diffNewVal.toFixed(2)} (${diffNewPct.toFixed(2)}%)</td>
+                </tr>
+            `;
+        }).join("");
+
+        afterDiv.innerHTML = `
+            <div class="spacer-24"></div>
+            <h3>Portfolio after applying suggestions</h3>
+            <div class="muted" style="margin-bottom: 10px;">
+                New stocks total: <b>${newTotal.toFixed(2)}</b> (old: ${oldTotalStocksValue.toFixed(2)}) ·
+                Invested: <b>${invested.toFixed(2)}</b> ·
+                Unallocated: <b>${suggestions.unallocated.toFixed(2)}</b>
+            </div>
+            <table>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Normalized BVB Weight</th>
+                    <th>New Portfolio Weight</th>
+                    <th>New Difference (Val and %)</th>
+                </tr>
                 ${rows}
             </table>
         `;
-
-        if (newInvestment > 0) {
-            const suggestions = generateInvestmentSuggestions(normalizedData, portfolioData, totalInvestment, newInvestment, minInvestmentAmount);
-            console.log(suggestions)
-            document.getElementById('investmentSuggestions').innerHTML = `
-                <h3>Investment Suggestions</h3>
-                <div class="total-investment">Total New Investment: ${newInvestment.toFixed(2)}</div>
-                <ul>
-                    ${suggestions.map(suggestion => `
-                        <li>
-                            <div class="investment-symbol">${suggestion.symbol}</div>
-                            <div class="investment-amount">${suggestion.amount.toFixed(2)}</div>
-                        </li>`).join('')}
-                </ul>
-            `;
-        }
     }
-
-    function getUnderwrightedStocks(normalisedData, portfolioData, totalInvestment) {
-        return normalisedData.map(company => {
-        const portfolioCompany = portfolioData.find(p => p.symbol === company.symbol) || { weight: 0 };
-        const portfolioWeight = portfolioCompany.weight || 0;
-
-        // Calculate the difference
-        const difference = ((portfolioWeight - company.normalizedWeight) / 100) * totalInvestment;
-
-        console.log(`Symbol: ${company.symbol}, Portfolio Weight: ${portfolioWeight}, Normalized Weight: ${company.normalizedWeight}, Difference: ${difference}`);
-
-        return {
-          symbol: company.symbol,
-          difference: difference // Store the difference
-        };
-        }).filter(stock => stock.difference < 0);
-    }
-
-    function generateInvestmentSuggestions(normalizedData, portfolioData, totalInvestment, newInvestment, minInvestmentAmount) {
-      // get stocks which are lower than the expected percentages
-      let underweightedStocks = getUnderwrightedStocks(normalizedData, portfolioData, totalInvestment);
-
-      // nothing to suggest in this case
-      if (underweightedStocks.length === 0) return []; // No stocks need an investment
-
-      // if I can suggest only for one stock, either the entire amount should go to it or at least until it reaches 0
-      if (underweightedStocks.length === 1) {
-        if (totalInvestment + underweightedStocks[0].difference > 0) {
-          return [
-            {
-              symbol: underweightedStocks[0].symbol,
-              amount: underweightedStocks[0].difference * -1
-            },
-            {
-              symbol: "other",
-              amount: totalInvestment + underweightedStocks[0].difference
-            }
-          ];
-        } else {
-          return [
-            {
-              symbol: underweightedStocks[0].symbol,
-              amount: totalInvestment
-            }
-          ];
-        }
-      }
-
-      //If I can put investments towards all the underweighted stocks with the current investment amount, I won't look for minimum investment,
-      //just use everything towards that and mention how much remaining money to invest i will have
-      let sumOfDifferences = underweightedStocks.reduce((sum, stock) => sum + stock.difference, 0);
-      if (newInvestment + sumOfDifferences >= 0) {
-          // Loop through underweighted stocks to assign amounts
-          for (let i = 0; i < underweightedStocks.length; i++) {
-              underweightedStocks[i].amount = underweightedStocks[i].difference * -1;
-          }
-
-          // Add an additional "other" stock to the array
-          underweightedStocks.push({
-              symbol: "other",
-              amount: totalInvestment + underweightedStocks[0].difference
-          });
-
-          return underweightedStocks;
-      }
-
-      // sorting them by the highest difference to the lowest
-      underweightedStocks.sort((a, b) => a.difference - b.difference); // Sort by the difference
-
-      // Set initial allocation for the first stock (the one with the highest difference)
-      let previousHigherStocks = 0;
-      let remainingInvestment = newInvestment;
-      for (let i = 0; i < underweightedStocks.length - 1; i++) {
-        if (remainingInvestment <= 0) {
-          return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
-        }
-
-        let firstHighestDiffStock = underweightedStocks[i].difference;
-        let secondHighestDiffStock = underweightedStocks[i + 1].difference;
-
-        let diffHighestToSecondHighest = secondHighestDiffStock - firstHighestDiffStock;
-
-        //cover case where verything goes to first stock
-        if(diffHighestToSecondHighest > remainingInvestment && i == 0) {
-          return  [
-            {
-              symbol: underweightedStocks[0].symbol,
-              amount: underweightedStocks[0].difference * -1
-            }
-          ]
-        }
-
-        //cover minimuminvestment
-        if (remainingInvestment < minInvestmentAmount * (previousHigherStocks + 1)) {
-          let amountForEachPrevHighestSymbol = remainingInvestment / previousHigherStocks;
-          for (let j = 0; j < i; j++) {
-            if (underweightedStocks[j].hasOwnProperty('amount')) {
-              underweightedStocks[j].amount += amountForEachPrevHighestSymbol;
-            } else {
-              underweightedStocks[j].amount = amountForEachPrevHighestSymbol;
-            }
-          }
-
-          return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
-        }
-
-        if (diffHighestToSecondHighest * previousHigherStocks > remainingInvestment) {
-          // this means everything needs to be allocated now to the previous values
-
-          // calculate amount to allocate to all
-          let amountForEachPrevHighestSymbol = remainingInvestment / (previousHigherStocks + 1);
-          for (let j = 0; j <= i; j++) {
-            if (underweightedStocks[j].hasOwnProperty('amount')) {
-              underweightedStocks[j].amount += amountForEachPrevHighestSymbol;
-            } else {
-              underweightedStocks[j].amount = amountForEachPrevHighestSymbol;
-            }
-          }
-
-          return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
-        } else {
-          for (let j = 0; j <= i; j++) {
-            if (underweightedStocks[j].hasOwnProperty('amount')) {
-              underweightedStocks[j].amount += diffHighestToSecondHighest;
-            } else {
-              underweightedStocks[j].amount = diffHighestToSecondHighest;
-            }
-          }
-          remainingInvestment -= diffHighestToSecondHighest * (previousHigherStocks + 1);
-        }
-
-        previousHigherStocks++;
-      }
-
-      //case where i still have remaining but i reached the end
-      if (remainingInvestment > 0) {
-        //vazut la cati se poarte impartii
-
-        let noOfCompaniesToSplitEquallyBetween = Math.floor(remainingInvestment / minInvestmentAmount);
-        if (noOfCompaniesToSplitEquallyBetween > underweightedStocks.length) {
-          let amountPerCompany = remainingInvestment / underweightedStocks.length;
-          for(let i=0; i<underweightedStocks.length; i++) {
-            if (underweightedStocks[i].hasOwnProperty('amount')) {
-              underweightedStocks[i].amount += amountPerCompany;
-            } else {
-              underweightedStocks[i].amount = amountPerCompany;
-            }
-          }
-        }  else {
-          let amountPerCompany = remainingInvestment / noOfCompaniesToSplitEquallyBetween;
-          for(let i=0; i<noOfCompaniesToSplitEquallyBetween ; i++) {
-            if (underweightedStocks[i].hasOwnProperty('amount')) {
-              underweightedStocks[i].amount += amountPerCompany;
-            } else {
-              underweightedStocks[i].amount = amountPerCompany;
-            }
-          }
-        }
-
-      }
-
-      return underweightedStocks.filter(stock => stock.hasOwnProperty('amount')); // Filter out stocks without an 'amount'
-    }
-
-
 </script>
 
 </body>

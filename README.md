@@ -1,92 +1,107 @@
-# BVB Portfolio Tracker
+# BVB Index Distribution / Portfolio Tracker
 
-The **BVB Portfolio Tracker** is a web-based tool designed to help me compare the weight distribution of stocks in a portfolio against the weights of companies in the Bucharest Stock Exchange (BVB) index. The app provides investment suggestions based on the portfolio data, and allows for the calculation of the optimal investment distribution to achieve a balanced portfolio.
+Live app: https://dragosgeornoiu.github.io/bvb-index-distribution/
 
-## Purpose
+A small GitHub Pages tool that compares a personal BVB portfolio to the BET index distribution and suggests how to invest available cash to move the portfolio closer to the index (buy-only, no selling).
 
-The main objective of this tool is to:
-- Compare the stock weight percentages of companies in your portfolio with those in the BVB index.
-- Generate fast investment suggestions to help you align your portfolio with the desired distribution of stocks.
+---
+
+## Why this exists
+
+I wanted a quick way to:
+- track how close my portfolio weights are to BET
+- understand which holdings are overweight/underweight versus the index
+- split available cash into buy orders that keep the portfolio closer to BET over time
+
+---
 
 ## Features
 
-- **Portfolio Comparison**: The app compares the normalized BVB weight distribution to the weight distribution in your portfolio, highlighting differences and suggesting investments to balance the portfolio.
+### 1) Portfolio comparison vs BET
+- Loads the latest BET constituent weights from a CSV.
+- Normalizes weights to 100% for the chosen universe.
+- Displays differences both as:
+    - percentage difference
+    - value difference (based on current portfolio value)
 
-- **Investment Suggestions**: Based on the differences between the BVB index weights and the portfolio weights, the app generates investment suggestions for underrepresented stocks in your portfolio.
+### 2) New investment suggestions (buy-only)
+When “Enable New Investment” is ON, the app:
+- uses your available cash as the maximum budget
+- suggests allocations across underweighted holdings
+- respects a “minimum investment per stock”
+- rounds down to lots of 50 so the total allocation never exceeds available cash
+- shows unallocated cash if it cannot be used under constraints without selling
 
-- **New Investment**: You can enable new investment and specify the amount to invest in underrepresented stocks, with a minimum investment per stock.
+### 3) Portfolio simulation after suggestions
+A second table shows:
+- the “new portfolio weights” if you apply the proposed allocations
+- the new differences versus the normalized BET weights
 
-## Technologies and Libraries Used
+### 4) Daily index snapshots (GitHub Actions)
+A GitHub Actions workflow scrapes BET index weights daily and commits:
+- input/bvb_distribution/bvb-companies-YYYY-MM-DD.csv
+- input/bvb_distribution/bvb-companies-latest.csv
 
-- **HTML5**: Used to create the basic structure of the app.
-- **CSS3**: For styling and layout, ensuring a clean and responsive design.
-- **JavaScript**: For logic, file handling, CSV parsing, and generating the portfolio comparison and investment suggestions.
-- **FileReader API**: For reading CSV files uploaded by the user.
-- **Vanilla JS**: No third-party libraries or frameworks were used for this project.
+### 5) Data Coverage page
+The “Data Coverage” tab displays:
+- a calendar-style view of which days have snapshots
+- a list of missing days (if any)
+- links to each daily snapshot file
 
-## How to Use
+---
 
-1. **Upload CSV Files**:
-   - Click on the **"Choose file"** button for the **BVB Companies CSV** and **Portfolio CSV** sections to upload the respective CSV files.
-   - The CSV file should follow the format defined below:
-     - **BVB CSV File Format**:
-       ```
-       symbol,weight
-       TLV,20.87
-       SNP,19.66
-       H2O,15.79
-       ```
-     - **Portfolio CSV File Format**:
-       ```
-       symbol,weight
-       TLV,19.85
-       SNP,19.08
-       H2O,12.95
-       ```
+## Input formats
 
-2. **Enter Portfolio Information**:
-   - Enter the **Total Portfolio Value** (the total value of your current investments).
-   - Enable or disable the **Only consider companies in my portfolio** toggle to filter out companies not present in your portfolio.
-   - Enable the **New Investment** toggle to add a new investment to underrepresented stocks. If enabled, you will be prompted to enter the **New Investment Amount** and the **Minimum Investment per Stock**.
+### Portfolio CSV (upload in the Tracker tab)
+Preferred format: values (not percentages)
 
-3. **Generate Report**:
-   - Click the **"Generate Report"** button to compare the portfolio weights with the BVB index weights.
-   - The app will display a table with the BVB companies, their respective weights, and the difference between the portfolio and BVB weight distributions.
-   - If new investment is enabled, investment suggestions will be displayed.
+    symbol,value
+    SNP,126057.38
+    TLV,121373.78
+    ...
+    CASH_VALUE,12023.80
 
-## How It Works
+Notes:
+- CASH_VALUE is treated as available cash and excluded from portfolio weights.
+- Values are assumed to be in your base currency (RON, EUR, etc.). The app does not enforce a specific currency.
 
-### Portfolio Comparison
+### Index CSV (auto-loaded)
 
-1. The BVB data and portfolio data are uploaded via the file input fields.
-2. The app calculates the normalized weight for each stock in the BVB index by adjusting the weights so they sum up to 100%.
-3. The app then compares the portfolio weights with the BVB normalized weights and calculates the **difference** in investment value and percentage.
-4. The results are displayed in a table with the following columns:
-   - **Symbol**: The stock symbol (e.g., AAPL, MSFT).
-   - **BVB Weight**: The weight of the company in the BVB index.
-   - **Normalized BVB Weight**: The weight of the company in the normalized BVB index.
-   - **Portfolio Weight**: The weight of the company in your portfolio.
-   - **Difference (Value & Percentage)**: The difference between your portfolio's weight and the BVB index weight, both in monetary value and percentage.
+    symbol,weight
+    TLV,19.30
+    SNP,19.03
+    ...
 
-### Investment Suggestions
+---
 
-1. If new investment is enabled, the app calculates which stocks are **underrepresented** in your portfolio compared to the BVB index.
-2. It then suggests how much money to allocate to each underrepresented stock based on the **new investment amount** and the **minimum investment per stock**.
-3. The suggestions are displayed with the stock symbols and the suggested investment amounts.
+## How to use
 
+1. Open the app (link at top).
+2. Upload your portfolio CSV (symbol,value).
+3. Click “Generate Report” to compare your portfolio vs the latest index weights.
+4. Optional: enable “New Investment”, adjust minimum per stock, then generate again to get suggestions.
+5. Review the “Portfolio after applying suggestions” table to validate improvement.
 
-## Access
+---
 
-You can access the app at:  
-[https://dragosgeornoiu.github.io/bvb-index-distribution/](https://dragosgeornoiu.github.io/bvb-index-distribution/)
+## Project structure
 
+- index.html — main tracker UI and logic
+- about.html — documentation page
+- data.html — data coverage calendar + missing days detection
+- styles.css — styling
+- scripts/scrape_bvb.py — scraper that extracts BET weights from bvb.ro
+- input/bvb_distribution/ — daily snapshots and latest snapshot
+- .github/workflows/daily_bvb_scrape.yml — daily action that updates CSVs
 
-## Current Status and Future Enhancements
+---
 
-The app is in a **sufficiently working condition** for its intended use and is fully functional for comparing portfolios with the BVB index, generating investment suggestions, and allowing for new investments.
+## Possible future enhancements
+- TradeVille portfolio import (CSV / copy-paste)
+- UI / UX refinements.
 
-### Planned Enhancements:
-1. **Refactor `getUnderweightedStocks` Method**: The current implementation of the method is lengthy and handles multiple responsibilities. It should be refactored to improve readability and maintainability by breaking it down into smaller, more focused functions.
-2. **CSV Input Validation**: There should be validation for the CSV input format to ensure that uploaded files are correctly structured and contain valid data, preventing errors during processing.
-3. **Improve Suggestion Generation Logic**: The logic behind generating investment suggestions needs enhancement, as there may be scenarios where it doesn't perform as expected or produces inaccurate results. Further refinement and testing are necessary to ensure that edge cases are properly handled and the logic works reliably.
-4. Take into consideration the split when you already have money to be invested added in account, so total is different and weights differ in Tradeville.
+---
+
+## Disclaimer
+
+This tool is for personal tracking and convenience. It does not provide financial advice.

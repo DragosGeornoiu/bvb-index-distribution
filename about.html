@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>About · BVB Index Distribution</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="top-nav">
+    <div class="top-nav-inner">
+        <div class="top-nav-title">BVB Index Distribution</div>
+        <div class="top-nav-tabs">
+            <a class="top-nav-tab" href="index.html">Tracker</a>
+            <a class="top-nav-tab active" href="about.html">About</a>
+            <a class="top-nav-tab" href="data.html">Data Coverage</a>
+        </div>
+    </div>
+</div>
+
+<div class="container page-content">
+    <h2>About this app</h2>
+
+    <div class="card">
+        <p>
+            This project helps compare a personal BVB portfolio against the BET index distribution, and suggests how to invest
+            available cash to move the portfolio closer to the index (without selling positions).
+        </p>
+        <p>
+            Live app: <a href="https://dragosgeornoiu.github.io/bvb-index-distribution/" target="_blank" rel="noopener noreferrer">
+            https://dragosgeornoiu.github.io/bvb-index-distribution/
+        </a>
+        </p>
+    </div>
+
+    <h3>How it works</h3>
+    <div class="card">
+        <ul>
+            <li><b>BET weights</b> are fetched from a daily-scraped CSV committed by a GitHub Action.</li>
+            <li><b>Portfolio</b> is provided as a CSV in <code>symbol,value</code> format (values in your base currency).</li>
+            <li><b>CASH_VALUE</b> is treated as available cash and excluded from portfolio weights.</li>
+            <li>The app compares portfolio weights vs normalized index weights and shows differences.</li>
+            <li>If you enable “New Investment”, it proposes buy-only allocations that keep the total ≤ available cash.</li>
+            <li>Allocations respect a configurable minimum per stock and are rounded down to lots of 50.</li>
+            <li>A second table shows <b>portfolio after applying suggestions</b> so you can validate improvement.</li>
+        </ul>
+    </div>
+
+    <h3>Input formats</h3>
+    <div class="card">
+        <p><b>Portfolio CSV</b> (upload in the Tracker tab):</p>
+        <pre><code>symbol,value
+SNP,126057.38
+TLV,121373.78
+...
+CASH_VALUE,12023.80</code></pre>
+
+        <p><b>Index CSV</b> (auto-fetched):</p>
+        <pre><code>symbol,weight
+TLV,19.30
+SNP,19.03
+...</code></pre>
+    </div>
+
+    <h3>Possible future enhancements</h3>
+    <div class="card">
+        <ul>
+            <li>TradeVille portfolio import (CSV / copy-paste), with possible future API integration.</li>
+            <li>UI / UX refinements.</li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>
