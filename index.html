@@ -6,7 +6,6 @@
     <title>BVB Portfolio Tracker</title>
     <link rel="stylesheet" href="styles.css" />
     <style>
-        /* Make readonly inputs clearly non-editable */
         input[readonly] {
             background-color: #eee;
             color: #666;
@@ -17,6 +16,7 @@
         .spacer-8 { height: 8px; }
         .spacer-16 { height: 16px; }
         .spacer-24 { height: 24px; }
+        .spacer-12 { height: 12px; } /* (was referenced in file but missing) */
 
         .section { margin-bottom: 18px; }
 
@@ -57,13 +57,9 @@
             background: #fff;
         }
 
-        .small-table td, .small-table th {
-            padding: 8px;
-        }
+        .small-table td, .small-table th { padding: 8px; }
         .right { text-align: right; }
         .center { text-align: center; }
-
-        /* ---------- UI additions ---------- */
 
         /* green "Loaded (n rows)" badges */
         .badge {
@@ -83,13 +79,7 @@
             color: #2ea043;
             border-color: rgba(46,160,67,0.25);
         }
-        .badge-neutral {
-            background: rgba(108,99,255,0.10);
-            color: #6c63ff;
-            border-color: rgba(108,99,255,0.25);
-        }
 
-        /* status rows: keep badges on NEXT row (so not far right) */
         .status-row {
             display: flex;
             flex-direction: column;
@@ -98,45 +88,34 @@
             margin-top: 8px;
         }
 
-        /* nicer segmented switch (CSV vs Tradeville)
-           Fix: avoid any "gray showing below" by giving each segment its own background
-           and matching heights exactly. */
+        /* segmented switch */
         .segmented {
             display: inline-flex;
             border: 1px solid rgba(108,99,255,0.35);
             border-radius: 999px;
             overflow: hidden;
-            background: transparent; /* important: no shared background peeking through */
-            height: 38px;           /* fixed height so active fill always covers fully */
+            background: transparent;
+            height: 38px;
         }
-        .segmented input {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
-        }
+        .segmented input { position: absolute; opacity: 0; pointer-events: none; }
         .segmented label {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             padding: 0 14px;
-            height: 38px;            /* match container height */
+            height: 38px;
             font-size: 13px;
             cursor: pointer;
             color: #6c63ff;
             user-select: none;
             white-space: nowrap;
-            background: rgba(108,99,255,0.10); /* inactive fill */
+            background: rgba(108,99,255,0.10);
             box-sizing: border-box;
         }
-        .segmented label + label {
-            border-left: 1px solid rgba(108,99,255,0.25);
-        }
-        .segmented label.active {
-            background: #6c63ff; /* active fill covers full height */
-            color: #fff;
-        }
+        .segmented label + label { border-left: 1px solid rgba(108,99,255,0.25); }
+        .segmented label.active { background: #6c63ff; color: #fff; }
 
-        /* soft transitions when switching import blocks */
+        /* transitions for import blocks */
         .collapse-wrap {
             overflow: hidden;
             transition: max-height 220ms ease, opacity 220ms ease, transform 220ms ease;
@@ -168,11 +147,7 @@
             font-weight: 600;
         }
         details.import-details > summary::-webkit-details-marker { display: none; }
-        .summary-hint {
-            font-weight: 400;
-            color: #666;
-            font-size: 12px;
-        }
+        .summary-hint { font-weight: 400; color: #666; font-size: 12px; }
         .chev {
             width: 10px;
             height: 10px;
@@ -186,13 +161,7 @@
         details[open] .chev { transform: rotate(225deg); }
 
         /* Yes/No switch */
-        .yn {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+        .yn { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; }
         .yn-label { font-weight: 600; }
         .yn-switch {
             display: inline-flex;
@@ -211,26 +180,64 @@
             transition: background 160ms ease, color 160ms ease;
             min-width: 54px;
         }
-        .yn-switch button + button {
-            border-left: 1px solid rgba(108,99,255,0.25);
+        .yn-switch button + button { border-left: 1px solid rgba(108,99,255,0.25); }
+        .yn-switch button.active { background: #6c63ff; color: #fff; }
+        .yn-hidden-checkbox { position: absolute; opacity: 0; pointer-events: none; }
+        .yn-row { margin-top: 10px; }
+
+        /* Fee tier section */
+        .mini-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
-        .yn-switch button.active {
-            background: #6c63ff;
-            color: #fff;
+        @media (max-width: 760px) { .mini-grid { grid-template-columns: 1fr; } }
+        .kv { display: flex; flex-direction: column; gap: 4px; }
+        .kv .k { font-size: 12px; color: #666; }
+        .kv .v { font-size: 14px; color: #222; font-weight: 600; }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            border: 1px solid rgba(0,0,0,0.12);
+            background: rgba(0,0,0,0.06);
+            color: #222;
+            width: fit-content;
         }
-        .yn-hidden-checkbox {
-            position: absolute;
-            opacity: 0;
-            pointer-events: none;
+        .pill.PLATINUM { background: rgba(30,30,30,0.12); border-color: rgba(30,30,30,0.25); color:#1e1e1e; }
+        .pill.GOLD     { background: rgba(242,193,78,0.22); border-color: rgba(242,193,78,0.45); color:#7a5a00; }
+        .pill.SILVER   { background: rgba(176,176,176,0.22); border-color: rgba(176,176,176,0.45); color:#4a4a4a; }
+        .pill.BRONZE   { background: rgba(199,124,46,0.22); border-color: rgba(199,124,46,0.45); color:#6a3f12; }
+        .pill.STANDARD { background: rgba(91,126,166,0.22); border-color: rgba(91,126,166,0.45); color:#2e4f73; }
+
+        /* make fees stand out */
+        .fee-big {
+            font-size: 18px;
+            font-weight: 800;
+            color: #222;
+        }
+        .fee-sub {
+            font-size: 12px;
+            color: #666;
+            margin-top: 2px;
         }
 
-        /* keep the two Y/N switches on separate rows */
-        .yn-row { margin-top: 10px; }
+        .suggestion-details {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* for negative unallocated display (fee can push over cash) */
+        .neg { color: #b42318; font-weight: 700; }
     </style>
 </head>
 <body>
 
-<!-- Top navigation -->
 <div class="top-nav">
     <div class="top-nav-inner">
         <div class="top-nav-title">BVB Index Distribution</div>
@@ -246,7 +253,6 @@
 
 <div class="container">
 
-    <!-- BVB CSV Source (auto) -->
     <div class="file-input section">
         <label>BVB Companies CSV</label>
         <div class="file-wrapper" style="justify-content: space-between;">
@@ -270,7 +276,6 @@
         </div>
     </div>
 
-    <!-- Portfolio import mode -->
     <div class="section">
         <label>Portfolio import</label>
 
@@ -286,10 +291,9 @@
 
         <div class="spacer-16"></div>
 
-        <!-- CSV upload block -->
         <div id="csvImportBlock" class="collapse-wrap">
             <div class="file-input">
-                <label for="portfolioFile">Upload Current Portfolio CSV (symbol,value)</label>
+                <label for="portfolioFile">Upload Current Portfolio CSV (symbol,value,market_price)</label>
                 <div class="file-wrapper">
                     <label for="portfolioFile" class="file-label">Choose file</label>
                     <input type="file" id="portfolioFile" accept=".csv,.txt" />
@@ -297,8 +301,9 @@
                 </div>
 
                 <div style="margin-top: 8px;" class="muted">
-                    Expected headers: <b>symbol,value</b>. Use <b>CASH_VALUE</b> row for available cash
-                    (e.g. <code>CASH_VALUE,12023.80</code>).
+                    Expected headers: <b>symbol,value,market_price</b>.
+                    <br/>
+                    Use <b>CASH_VALUE</b> row for available cash (e.g. <code>CASH_VALUE,12023.80,</code>).
                 </div>
 
                 <div class="status-row">
@@ -308,12 +313,12 @@
             </div>
         </div>
 
-        <!-- Paste import block -->
         <div id="pasteImportBlock" class="collapse-wrap is-hidden">
             <div class="card-like">
                 <div class="muted" style="margin-bottom: 8px;">
                     Paste the Tradeville portfolio table here. Extra text before/after is fine.
-                    The parser looks for instrument lines and the <b>RON</b> cash line (mapped to <b>CASH_VALUE</b>).
+                    The parser extracts:
+                    <b>Pret piata</b> as <b>market_price</b>, <b>evaluare</b> as <b>value</b>, and detects cash from the <b>RON</b> row.
                 </div>
 
                 <textarea id="tradevilleText" class="tradeville-input" placeholder="Paste Tradeville table text here..."></textarea>
@@ -332,7 +337,6 @@
         </div>
     </div>
 
-    <!-- Imported portfolio preview (collapsible) -->
     <div id="importPreviewBlock" class="section" style="display:none;">
         <details class="import-details" id="importPreviewDetails">
             <summary>
@@ -348,27 +352,20 @@
 
             <div class="spacer-8"></div>
             <div class="muted" style="margin-bottom: 10px;">
-                This is the normalized input used for report generation (stocks-only weights; CASH_VALUE excluded from weights).
+                Normalized input used for report generation (stocks-only weights; CASH_VALUE excluded from weights).
             </div>
             <div id="importPreviewTable"></div>
         </details>
     </div>
 
-    <!-- Total Portfolio Value (stocks-only) -->
     <div class="input-group section">
-        <label for="totalInvestment">Total Portfolio Value (stocks-only, auto from CSV)</label>
-        <input
-                type="number"
-                id="totalInvestment"
-                placeholder="Auto-filled from portfolio CSV"
-                readonly
-        />
+        <label for="totalInvestment">Total Portfolio Value (stocks-only, auto from import)</label>
+        <input type="number" id="totalInvestment" placeholder="Auto-filled from portfolio import" readonly />
         <div style="margin-top: 6px;" class="muted">
             This excludes CASH_VALUE so cash won’t influence stock weights.
         </div>
     </div>
 
-    <!-- Filter Portfolio Toggle (Yes/No switch UI) -->
     <div class="section yn yn-row">
         <span class="yn-label">Only consider companies in my portfolio</span>
         <input type="checkbox" id="filterPortfolioToggle" class="yn-hidden-checkbox" checked />
@@ -376,9 +373,11 @@
             <button type="button" id="filterYes" class="active">Yes</button>
             <button type="button" id="filterNo">No</button>
         </div>
+        <div class="muted" style="width:100%; margin-top:6px;">
+            If enabled, the index is normalized only over the symbols that exist in your imported portfolio.
+        </div>
     </div>
 
-    <!-- New Investment Toggle (Yes/No switch UI) -->
     <div class="section yn yn-row">
         <span class="yn-label">Enable New Investment</span>
         <input type="checkbox" id="newInvestmentToggle" class="yn-hidden-checkbox" />
@@ -386,9 +385,11 @@
             <button type="button" id="investYes">Yes</button>
             <button type="button" id="investNo" class="active">No</button>
         </div>
+        <div class="muted" style="width:100%; margin-top:6px;">
+            If enabled, the tool suggests buy-only allocations using CASH_VALUE as the available cash.
+        </div>
     </div>
 
-    <!-- New Investment Inputs -->
     <div id="investmentFields" style="display: none;" class="section">
         <div class="input-group">
             <label for="newInvestmentAmount">New Investment Amount (auto from CASH_VALUE)</label>
@@ -400,7 +401,9 @@
             <input type="number" id="minInvestmentAmount" placeholder="Enter minimum investment per stock" value="500" />
         </div>
 
-        <div class="muted">Suggestions are rounded down to <b>50</b> so total never exceeds available cash.</div>
+        <div class="muted">
+            Suggestions are computed buy-only (no selling). Market prices are used for better practicality.
+        </div>
         <div class="spacer-16"></div>
     </div>
 
@@ -408,16 +411,74 @@
 
     <div class="report-container">
         <div id="report"></div>
+
         <div id="investmentSuggestions"></div>
+
+        <!-- Fee tier block (will be moved INSIDE Investment Suggestions rendering as first element) -->
+        <div id="feeTierBlock" class="section" style="display:none;">
+            <div class="card-like">
+                <div style="font-weight:700; color:#222;">TradeVille fee tier (BVB, estimated)</div>
+
+                <div class="spacer-8"></div>
+                <div>
+                    <span class="pill" id="feeTierName">—</span>
+                </div>
+
+                <!-- more spacing from tier -> fees -->
+                <div class="spacer-16"></div>
+
+                <!-- FEES FIRST and more prominent -->
+                <div class="fee-big" id="feeTierFeesBig">—</div>
+                <div class="fee-sub" id="feeTierFeesSub"></div>
+
+                <!-- more spacing between "All Inclusive commission" and tier rule -->
+                <div class="spacer-16"></div>
+
+                <!-- TIER RULE AFTER FEES -->
+                <div class="kv" style="margin-bottom: 10px;">
+                    <div class="k">Tier rule</div>
+                    <div class="v" id="feeTierRule">—</div>
+                </div>
+
+                <div class="spacer-16"></div>
+
+                <div class="mini-grid">
+                    <div class="kv">
+                        <div class="k">Portfolio total (RON)</div>
+                        <div class="v" id="feePortfolioRon">—</div>
+                    </div>
+                    <div class="kv">
+                        <div class="k">EUR/RON</div>
+                        <div class="v" id="feeEurRon">—</div>
+                    </div>
+                    <div class="kv">
+                        <div class="k">Portfolio total (EUR)</div>
+                        <div class="v" id="feePortfolioEur">—</div>
+                    </div>
+                    <div class="kv">
+                        <div class="k">Updated</div>
+                        <div class="v" id="feeTierUpdated">—</div>
+                    </div>
+                </div>
+
+                <div class="spacer-8"></div>
+                <div class="muted" id="feeTierSources"></div>
+
+                <div class="spacer-8"></div>
+                <div class="muted">
+                    Notes: Tier selection uses total portfolio value (stocks + cash). Fees are estimates and stored as a static snapshot.
+                </div>
+            </div>
+        </div>
+
         <div id="afterSuggestions"></div>
     </div>
 </div>
 
 <script>
     const BVB_LATEST_CSV_URL = "input/bvb_distribution/bvb-companies-latest.csv";
-
-    // Round allocation lots to this amount (RON, or your chosen base currency)
-    const SUGGESTION_ROUND_STEP = 50;
+    const EUR_RON_JSON_URL = "input/meta/eur_ron.json";
+    const TRADEVILLE_FEES_JSON_URL = "input/meta/tradeville_fees_ro_bvb.json";
 
     const bvbLoadStatusEl = document.getElementById("bvbLoadStatus");
     const portfolioParseStatusEl = document.getElementById("portfolioParseStatus");
@@ -434,11 +495,25 @@
     const tradevilleRowsBadgeEl = document.getElementById("tradevilleRowsBadge");
     const importPreviewRowsBadgeEl = document.getElementById("importPreviewRowsBadge");
 
+    // fee tier UI
+    const feeTierBlockEl = document.getElementById("feeTierBlock");
+    const feeTierNameEl = document.getElementById("feeTierName");
+    const feeTierFeesBigEl = document.getElementById("feeTierFeesBig");
+    const feeTierFeesSubEl = document.getElementById("feeTierFeesSub");
+    const feeTierSourcesEl = document.getElementById("feeTierSources");
+    const feePortfolioRonEl = document.getElementById("feePortfolioRon");
+    const feeEurRonEl = document.getElementById("feeEurRon");
+    const feePortfolioEurEl = document.getElementById("feePortfolioEur");
+    const feeTierRuleEl = document.getElementById("feeTierRule");
+    const feeTierUpdatedEl = document.getElementById("feeTierUpdated");
+
     let parsedPortfolio = null;
 
-    // ----------------------------
-    // Import mode switching (UI only)
-    // ----------------------------
+    // cached meta
+    let metaEurRon = null;
+    let metaFees = null;
+
+    // Import mode switching
     const importModeCsvEl = document.getElementById("importModeCsv");
     const importModePasteEl = document.getElementById("importModePaste");
     const csvImportBlockEl = document.getElementById("csvImportBlock");
@@ -459,7 +534,6 @@
         csvImportBlockEl.classList.toggle("is-hidden", !isCsv);
         pasteImportBlockEl.classList.toggle("is-hidden", isCsv);
 
-        // Reset statuses when switching
         if (isCsv) {
             tradevilleParseStatusEl.textContent = "No pasted data";
             tradevilleRowsBadgeEl.style.display = "none";
@@ -474,13 +548,10 @@
     importModeCsvEl.addEventListener("change", () => setImportMode("csv"));
     importModePasteEl.addEventListener("change", () => setImportMode("paste"));
 
-    // ----------------------------
-    // Yes/No switches (UI only)
-    // ----------------------------
+    // Yes/No switches (UI)
     const filterToggleEl = document.getElementById("filterPortfolioToggle");
     const filterYesBtn = document.getElementById("filterYes");
     const filterNoBtn = document.getElementById("filterNo");
-
     function syncFilterButtons() {
         const on = !!filterToggleEl.checked;
         filterYesBtn.classList.toggle("active", on);
@@ -493,7 +564,6 @@
     const newInvToggleEl = document.getElementById("newInvestmentToggle");
     const investYesBtn = document.getElementById("investYes");
     const investNoBtn = document.getElementById("investNo");
-
     function syncInvestmentButtons() {
         const on = !!newInvToggleEl.checked;
         investYesBtn.classList.toggle("active", on);
@@ -505,9 +575,7 @@
     newInvToggleEl.addEventListener("change", syncInvestmentButtons);
     syncInvestmentButtons();
 
-    // ----------------------------
-    // CSV import
-    // ----------------------------
+    // CSV import (market_price mandatory)
     document.getElementById("portfolioFile").addEventListener("change", function () {
         const file = this.files[0];
         document.getElementById("portfolioFileName").textContent = file ? file.name : "No file chosen";
@@ -520,6 +588,7 @@
         totalInvestmentEl.value = "";
         newInvestmentAmountEl.value = "";
         hideImportPreview();
+        hideFeeTierSection();
 
         if (!file) {
             portfolioParseStatusEl.textContent = "No file loaded";
@@ -531,8 +600,13 @@
             try {
                 const rows = parseCSV(event.target.result);
 
-                const hasValue = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "value");
-                if (!hasValue) throw new Error("Portfolio CSV must contain headers: symbol,value");
+                const hasSymbol = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "symbol");
+                const hasValue  = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "value");
+                const hasPrice  = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "market_price");
+
+                if (!hasSymbol || !hasValue || !hasPrice) {
+                    throw new Error("Portfolio CSV must contain headers: symbol,value,market_price");
+                }
 
                 const { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks } = portfolioValues(rows);
 
@@ -564,9 +638,7 @@
         reader.readAsText(file);
     });
 
-    // ----------------------------
     // Tradeville paste import
-    // ----------------------------
     document.getElementById("parseTradevilleBtn").addEventListener("click", function () {
         const text = String(document.getElementById("tradevilleText").value || "").trim();
 
@@ -578,6 +650,7 @@
         totalInvestmentEl.value = "";
         newInvestmentAmountEl.value = "";
         hideImportPreview();
+        hideFeeTierSection();
 
         if (!text) {
             tradevilleParseStatusEl.textContent = "No pasted data";
@@ -619,9 +692,7 @@
         }
     });
 
-    // ----------------------------
-    // Report generation (logic unchanged)
-    // ----------------------------
+    // Report generation
     document.getElementById("generateReport").addEventListener("click", async function () {
         if (!parsedPortfolio) {
             alert("Please import your portfolio first (CSV upload or Tradeville copy/paste).");
@@ -667,24 +738,103 @@
         }
 
         const bvbData = parseCSV(bvbText);
-
         const bvbCount = Array.isArray(bvbData) ? bvbData.filter(r => r && r.symbol).length : 0;
         bvbRowsBadgeEl.textContent = `Loaded (${bvbCount} rows)`;
         bvbRowsBadgeEl.style.display = "inline-flex";
+
+        // load fee meta (best-effort)
+        await loadFeeMetaIfNeeded();
 
         generateReportAndSuggestions(
             bvbData,
             parsedPortfolio.portfolio,
             parsedPortfolio.totalStocksValue,
+            parsedPortfolio.totalAllValue,
             onlyPortfolioCompanies,
             newInvestmentEnabled ? newInvestment : 0,
             newInvestmentEnabled ? minInvestmentAmount : 0
         );
     });
 
-    // ----------------------------
-    // Import preview UI (collapsible)
-    // ----------------------------
+    async function loadFeeMetaIfNeeded() {
+        if (metaEurRon && metaFees) return;
+        metaEurRon = null;
+        metaFees = null;
+
+        try {
+            const cacheBuster = `t=${Date.now()}`;
+            const [eurResp, feeResp] = await Promise.all([
+                fetch(`${EUR_RON_JSON_URL}?${cacheBuster}`, { cache: "no-store" }),
+                fetch(`${TRADEVILLE_FEES_JSON_URL}?${cacheBuster}`, { cache: "no-store" })
+            ]);
+            if (eurResp.ok) metaEurRon = await eurResp.json();
+            if (feeResp.ok) metaFees = await feeResp.json();
+        } catch (e) {
+            console.warn("Failed to load fee meta json:", e);
+            metaEurRon = null;
+            metaFees = null;
+        }
+    }
+
+    function pickTier(totalEur, feesJson) {
+        const tiers = Array.isArray(feesJson?.tiers) ? feesJson.tiers.slice() : [];
+        tiers.sort((a, b) => (b.threshold_eur_min ?? 0) - (a.threshold_eur_min ?? 0));
+        for (const t of tiers) {
+            const thr = Number(t.threshold_eur_min ?? 0);
+            if (totalEur >= thr) return t;
+        }
+        return tiers[tiers.length - 1] || null;
+    }
+
+    function renderFeeTierSection(totalRon, eurJson, feesJson) {
+        const eurRon = Number(eurJson?.eur_ron);
+        if (!Number.isFinite(eurRon) || eurRon <= 0) throw new Error("Invalid EUR/RON rate");
+
+        const totalEur = totalRon / eurRon;
+        const tier = pickTier(totalEur, feesJson);
+        if (!tier) throw new Error("No tier found");
+
+        const thr = Number(tier.threshold_eur_min ?? 0);
+        const feePct = Number(tier.fee_percent ?? 0);
+        const fixedEur = Number(tier.fixed_fee_eur ?? 0);
+
+        feeTierNameEl.textContent = tier.name || "—";
+        feeTierNameEl.className = `pill ${(tier.name || "").toUpperCase()}`;
+
+        // FEES FIRST and prominent; intraday skipped
+        feeTierFeesBigEl.textContent = `${feePct.toFixed(2)}% + €${fixedEur.toFixed(2)}`;
+        feeTierFeesSubEl.textContent = `All Inclusive commission for BVB (estimate)`;
+
+        // tier rule AFTER fees
+        feeTierRuleEl.textContent = `≥ ${formatMoney(thr)} EUR`;
+
+        const eurUpdated = eurJson?.updated_at_utc ? String(eurJson.updated_at_utc) : "—";
+        const feesUpdated = feesJson?.updated_at_utc ? String(feesJson.updated_at_utc) : "—";
+
+        feeTierSourcesEl.innerHTML = `
+            Sources:
+            <a href="${TRADEVILLE_FEES_JSON_URL}" target="_blank" rel="noopener noreferrer">tradeville_fees_ro_bvb.json</a>
+            ·
+            <a href="${EUR_RON_JSON_URL}" target="_blank" rel="noopener noreferrer">eur_ron.json</a>
+        `;
+
+        feePortfolioRonEl.textContent = formatMoney(totalRon) + " RON";
+        feeEurRonEl.textContent = eurRon.toFixed(4) + ` (observed: ${eurJson?.observed_date_text || "—"})`;
+        feePortfolioEurEl.textContent = formatMoney(totalEur) + " EUR";
+        feeTierUpdatedEl.textContent = `fees: ${feesUpdated} · eur: ${eurUpdated}`;
+
+        feeTierBlockEl.style.display = "block";
+    }
+
+    function hideFeeTierSection() {
+        feeTierBlockEl.style.display = "none";
+        feeTierNameEl.textContent = "—";
+        feeTierNameEl.className = "pill";
+        feeTierFeesBigEl.textContent = "—";
+        feeTierFeesSubEl.textContent = "";
+    }
+
+    // Imported preview
     function hideImportPreview() {
         importPreviewBlockEl.style.display = "none";
         importPreviewTableEl.innerHTML = "";
@@ -703,6 +853,7 @@
                 <tr>
                     <td class="center">${escapeHtml(r.symbol)}</td>
                     <td class="right">${r.value.toFixed(2)}</td>
+                    <td class="right">${Number(r.market_price).toFixed(4)}</td>
                     <td class="right">${weight.toFixed(2)}%</td>
                 </tr>
             `;
@@ -710,8 +861,9 @@
 
         const cashRowHtml = cash > 0 ? `
             <tr>
-                <td class="center"><b>CASH_VALUE</b></td>
+                <td class="center">CASH_VALUE</td>
                 <td class="right">${cash.toFixed(2)}</td>
+                <td class="right muted">—</td>
                 <td class="right muted">excluded</td>
             </tr>
         ` : "";
@@ -721,6 +873,7 @@
                 <tr>
                     <th>Symbol</th>
                     <th>Value</th>
+                    <th>Market price</th>
                     <th>Weight (stocks-only)</th>
                 </tr>
                 ${rowsHtml}
@@ -744,9 +897,11 @@
             .replaceAll("'", "&#039;");
     }
 
-    // ----------------------------
-    // Tradeville parser
-    // ----------------------------
+    function formatMoney(n) {
+        return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    // Tradeville parser + CSV + portfolio values (UNCHANGED logic)
     function parseTradevilleToRows(text) {
         const lines = String(text)
             .replace(/\r\n/g, "\n")
@@ -761,50 +916,54 @@
         for (const line of lines) {
             const normalized = line.replace(/\u00A0/g, " ");
             const parts = splitLooseColumns(normalized);
-
-            if (parts.length < 3) continue;
+            if (parts.length < 4) continue;
 
             if (parts[0].toUpperCase() === "RON") {
-                const cash = findFirstMoneyLike(parts);
-                if (Number.isFinite(cash) && cash > 0) {
-                    detectedCash = cash;
-                }
+                const cash = findBestCashLike(parts);
+                if (Number.isFinite(cash) && cash > 0) detectedCash = cash;
                 continue;
             }
 
             const sym = parts[0].trim();
             if (!/^[A-Z0-9]{1,6}$/.test(sym)) continue;
 
-            const last = parts[parts.length - 1];
-            if (!/%$/.test(String(last))) continue;
+            const lastToken = String(parts[parts.length - 1] || "");
+            if (!/%$/.test(lastToken)) continue;
 
-            const evalToken = parts[parts.length - 3];
-            const evaluare = parseMoney(evalToken);
-
+            const evaluare = findEvaluareFromEnd(parts);
             if (!Number.isFinite(evaluare) || evaluare <= 0) continue;
 
-            out.push({ symbol: sym, value: evaluare });
+            const marketPrice = findMarketPriceNearQuantity(parts);
+            if (!Number.isFinite(marketPrice) || marketPrice <= 0) continue;
+
+            out.push({ symbol: sym, value: evaluare, market_price: marketPrice });
         }
 
         if (Number.isFinite(detectedCash) && detectedCash > 0) {
-            out.push({ symbol: "CASH_VALUE", value: detectedCash });
+            out.push({ symbol: "CASH_VALUE", value: detectedCash, market_price: "" });
         }
 
         const merged = new Map();
         for (const r of out) {
             const k = String(r.symbol).trim();
-            const v = Number(r.value);
-            if (!k || !Number.isFinite(v)) continue;
-            merged.set(k, (merged.get(k) || 0) + v);
+            if (!k) continue;
+
+            const prev = merged.get(k);
+            if (!prev) {
+                merged.set(k, { symbol: k, value: Number(r.value) || 0, market_price: r.market_price });
+            } else {
+                prev.value += (Number(r.value) || 0);
+                if (Number.isFinite(Number(r.market_price)) && Number(r.market_price) > 0) {
+                    prev.market_price = r.market_price;
+                }
+            }
         }
 
-        return Array.from(merged.entries()).map(([symbol, value]) => ({ symbol, value }));
+        return Array.from(merged.values());
     }
 
     function splitLooseColumns(line) {
-        if (line.includes("\t")) {
-            return line.split("\t").map(s => s.trim()).filter(s => s !== "");
-        }
+        if (line.includes("\t")) return line.split("\t").map(s => s.trim()).filter(s => s !== "");
         return line.split(/\s{2,}/g).map(s => s.trim()).filter(s => s !== "");
     }
 
@@ -814,34 +973,67 @@
         s = s.replace(/[A-Za-z]/g, "").trim();
         s = s.replace(/%/g, "").trim();
         s = s.replace(/\s/g, "");
-
-        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) {
-            s = s.replace(/,/g, "");
-        }
-        if (/^\d+,\d+$/.test(s)) {
-            s = s.replace(",", ".");
-        }
-
+        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, "");
+        if (/^\d+,\d+$/.test(s)) s = s.replace(",", ".");
         const n = Number(s);
         return Number.isFinite(n) ? n : NaN;
     }
 
-    function findFirstMoneyLike(parts) {
-        for (const p of parts) {
-            const n = parseMoney(p);
-            if (Number.isFinite(n) && n > 0) return n;
+    function isLikelyIntegerQuantityToken(tok) {
+        const s = String(tok).replace(/\s/g, "");
+        return /^\d{1,3}(,\d{3})*$/.test(s) || /^\d+$/.test(s);
+    }
+
+    function isLikelyPriceToken(tok) {
+        const n = parseMoney(tok);
+        return Number.isFinite(n) && n > 0 && n < 100000;
+    }
+
+    function findMarketPriceNearQuantity(parts) {
+        for (let i = 1; i < parts.length - 1; i++) {
+            const t = parts[i];
+            if (!isLikelyIntegerQuantityToken(t)) continue;
+            for (let j = i + 1; j < Math.min(i + 4, parts.length); j++) {
+                const cand = parts[j];
+                if (isLikelyPriceToken(cand)) {
+                    const price = parseMoney(cand);
+                    if (String(cand).includes("%")) continue;
+                    return price;
+                }
+            }
         }
         return NaN;
     }
 
-    // ----------------------------
-    // CSV parsing (comma/semicolon/tab + basic quoting)
-    // ----------------------------
+    function findEvaluareFromEnd(parts) {
+        let hits = 0;
+        let firstMoney = NaN;
+        for (let i = parts.length - 1; i >= 0; i--) {
+            const tok = String(parts[i] ?? "");
+            if (tok.endsWith("%")) continue;
+            const n = parseMoney(tok);
+            if (!Number.isFinite(n)) continue;
+            hits++;
+            if (hits === 1) firstMoney = n;
+            if (hits === 2) return n;
+        }
+        return firstMoney;
+    }
+
+    function findBestCashLike(parts) {
+        let best = NaN;
+        for (const p of parts) {
+            const n = parseMoney(p);
+            if (!Number.isFinite(n)) continue;
+            if (!Number.isFinite(best) || n > best) best = n;
+        }
+        return best;
+    }
+
     function detectDelimiter(headerLine) {
         const commaCount = (headerLine.match(/,/g) || []).length;
         const semiCount = (headerLine.match(/;/g) || []).length;
         const tabCount = (headerLine.match(/\t/g) || []).length;
-
         if (tabCount > commaCount && tabCount > semiCount) return "\t";
         if (semiCount > commaCount) return ";";
         return ",";
@@ -851,27 +1043,15 @@
         const out = [];
         let cur = "";
         let inQuotes = false;
-
         for (let i = 0; i < line.length; i++) {
             const ch = line[i];
-
             if (ch === '"') {
                 const next = line[i + 1];
-                if (inQuotes && next === '"') {
-                    cur += '"';
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
+                if (inQuotes && next === '"') { cur += '"'; i++; }
+                else inQuotes = !inQuotes;
                 continue;
             }
-
-            if (!inQuotes && ch === delimiter) {
-                out.push(cur);
-                cur = "";
-                continue;
-            }
-
+            if (!inQuotes && ch === delimiter) { out.push(cur); cur = ""; continue; }
             cur += ch;
         }
         out.push(cur);
@@ -882,16 +1062,23 @@
         if (raw == null) return raw;
         const s = String(raw).trim();
         if (s === "") return s;
-
         const noPct = s.replace(/%/g, "").trim();
         const normalized = noPct.replace(/\s/g, "");
         const n = Number(normalized);
         if (!Number.isNaN(n)) return n;
-
         const commaDecimal = normalized.replace(",", ".");
         const n2 = Number(commaDecimal);
         if (!Number.isNaN(n2)) return n2;
+        return s;
+    }
 
+    function normalizeHeader(h) {
+        const s = String(h || "").trim().toLowerCase();
+        if (s === "price") return "market_price";
+        if (s === "marketprice") return "market_price";
+        if (s === "market_price") return "market_price";
+        if (s === "pret_piata") return "market_price";
+        if (s === "pretpiata") return "market_price";
         return s;
     }
 
@@ -902,37 +1089,27 @@
             .split("\n")
             .map(l => l.trim())
             .filter(l => l !== "" && !l.startsWith("#"));
-
         if (lines.length === 0) return [];
-
         const delimiter = detectDelimiter(lines[0]);
-        const headers = splitCsvLine(lines[0], delimiter).map(h => h.trim());
+        const rawHeaders = splitCsvLine(lines[0], delimiter).map(h => h.trim());
+        const headers = rawHeaders.map(normalizeHeader);
 
         const rows = [];
         for (let i = 1; i < lines.length; i++) {
             const values = splitCsvLine(lines[i], delimiter);
-
             const obj = {};
-            headers.forEach((h, idx) => {
-                obj[h] = toNumberMaybe(values[idx] ?? "");
-            });
-
-            if (obj.Symbol && !obj.symbol) obj.symbol = obj.Symbol;
-            if (obj.VALUE && !obj.value) obj.value = obj.VALUE;
-
+            headers.forEach((h, idx) => { obj[h] = toNumberMaybe(values[idx] ?? ""); });
             rows.push(obj);
         }
         return rows;
     }
 
-    // ----------------------------
-    // Portfolio values -> weights (stocks-only)
-    // ----------------------------
     function portfolioValues(rows) {
         const cleaned = rows
             .map(r => ({
                 symbol: String(r.symbol ?? "").trim(),
-                value: Number(r.value)
+                value: Number(r.value),
+                market_price: r.market_price === "" ? "" : Number(r.market_price)
             }))
             .filter(r => r.symbol !== "" && Number.isFinite(r.value));
 
@@ -940,15 +1117,18 @@
         const cashRows = cleaned.filter(r => cashSymbols.has(r.symbol.toUpperCase()));
         const stockRows = cleaned.filter(r => !cashSymbols.has(r.symbol.toUpperCase()));
 
+        const bad = stockRows.filter(r => !(Number.isFinite(Number(r.market_price)) && Number(r.market_price) > 0));
+        if (bad.length > 0) throw new Error(`Missing or invalid market_price for: ${bad.map(b => b.symbol).join(", ")}`);
+
         const cashValue = cashRows.reduce((s, r) => s + r.value, 0);
         const totalStocksValue = stockRows.reduce((s, r) => s + r.value, 0);
         const totalAllValue = totalStocksValue + cashValue;
-
         if (totalStocksValue <= 0) throw new Error("Total stocks value is 0.");
 
         const portfolio = stockRows.map(r => ({
             symbol: r.symbol,
             value: r.value,
+            market_price: Number(r.market_price),
             weight: (r.value / totalStocksValue) * 100
         }));
 
@@ -960,13 +1140,11 @@
         return x.toFixed(2);
     }
 
-    // ----------------------------
-    // Main report + suggestions + simulation table
-    // ----------------------------
     function generateReportAndSuggestions(
         bvbData,
         portfolioWithValues,
         totalStocksValue,
+        totalAllValue,
         onlyPortfolioCompanies,
         newInvestment,
         minInvestmentAmount
@@ -977,6 +1155,7 @@
 
         suggestionsDiv.innerHTML = "";
         afterDiv.innerHTML = "";
+        hideFeeTierSection();
 
         let bvbUniverse = bvbData;
         if (onlyPortfolioCompanies) {
@@ -1032,161 +1211,204 @@
 
         if (!(newInvestment > 0)) return;
 
-        const suggestions = computeSuggestions(
+        const suggestions = computeSuggestionsWithMarketPrices(
             normalizedBvb,
             portfolioWithValues,
             totalStocksValue,
             newInvestment,
-            minInvestmentAmount,
-            SUGGESTION_ROUND_STEP
+            minInvestmentAmount
         );
 
-        const allocated = suggestions.items.reduce((s, x) => s + x.amount, 0);
+        const feeInfo = computeFeeInfoForCards(totalAllValue, metaEurRon, metaFees);
 
-        const listItems = suggestions.items.map(it => `
-            <li>
-                <div class="investment-symbol">${it.symbol}</div>
-                <div class="investment-amount">${it.amount.toFixed(2)}</div>
-            </li>
-        `).join("");
+        // --- FIX: totals in cards match "shares × price + fee" ---
+        const computedItems = suggestions.items.map(it => {
+            const t = computeOrderTotals(it, feeInfo);
+            return { ...it, _gross: t.gross, _fee: t.fee, _total: t.total };
+        });
+
+        const allocatedGross = computedItems.reduce((s, x) => s + (x._gross || 0), 0);
+        const allocatedTotal = computedItems.reduce((s, x) => s + (x._total || 0), 0);
+        const unallocatedTotal = (Number(newInvestment) || 0) - allocatedTotal;
+
+        const listItems = computedItems.map(it => {
+            const detailsLine = buildSuggestionDetailsLine(it, feeInfo);
+            // BIG NUMBER now shows total (gross + fee), matching details line.
+            return `
+                <li>
+                    <div class="investment-symbol">${it.symbol}</div>
+                    <div class="investment-amount">${(it._total ?? it.amount).toFixed(2)}</div>
+                    ${detailsLine ? `<div class="suggestion-details">${detailsLine}</div>` : ``}
+                </li>
+            `;
+        }).join("");
+
+        // Render fee tier section HERE and as FIRST element inside Investment Suggestions
+        // (we "adopt" the existing feeTierBlock element by placing it into suggestionsDiv)
+        if (metaEurRon && metaFees) {
+            try {
+                renderFeeTierSection(totalAllValue, metaEurRon, metaFees);
+                suggestionsDiv.appendChild(feeTierBlockEl); // move to Investment Suggestions
+            } catch (e) {
+                console.warn("Fee tier render failed:", e);
+                hideFeeTierSection();
+            }
+        }
+
+        const unallocCls = unallocatedTotal < -0.005 ? "neg" : "";
 
         suggestionsDiv.innerHTML = `
             <h3>Investment Suggestions</h3>
+        ` + suggestionsDiv.innerHTML + `
             <div class="total-investment">
-                Available: ${newInvestment.toFixed(2)} · Allocated: ${allocated.toFixed(2)} · Unallocated: ${suggestions.unallocated.toFixed(2)}
+                Available: ${newInvestment.toFixed(2)}
+                · Allocated: ${allocatedTotal.toFixed(2)}
+                · Unallocated: <span class="${unallocCls}">${formatZeroNoMinus(unallocatedTotal)}</span>
+            </div>
+            <div class="muted" style="margin-top:6px;">
+                Allocated includes estimated fees per symbol (variable + fixed). Gross-only allocated: ${allocatedGross.toFixed(2)}.
             </div>
             <ul>
                 ${listItems}
             </ul>
+            <div class="muted" style="margin-top:10px;">
+                Notes: Suggestions are constrained by market prices (whole shares). Fees shown are estimates (display only).
+            </div>
         `;
 
         const after = portfolioAfterSuggestions(portfolioWithValues, suggestions.items, totalStocksValue);
-        renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions);
+        renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, { ...suggestions, unallocated: Math.max(0, suggestions.unallocated) });
     }
 
-    // ----------------------------
-    // Suggestion algorithm (buy-only)
-    // ----------------------------
-    function computeSuggestions(normalizedBvb, portfolioWithValues, totalStocksValue, cashToInvest, minPerStock, roundStep) {
-        const currentValueBySymbol = new Map(portfolioWithValues.map(p => [p.symbol, p.value]));
+    function computeFeeInfoForCards(totalRon, eurJson, feesJson) {
+        try {
+            const eurRon = Number(eurJson?.eur_ron);
+            if (!Number.isFinite(eurRon) || eurRon <= 0) return null;
+            const totalEur = totalRon / eurRon;
+            const tier = pickTier(totalEur, feesJson);
+            if (!tier) return null;
 
-        const targets = normalizedBvb.map(c => ({
-            symbol: c.symbol,
-            t: c.normalizedWeight / 100
-        }));
+            return {
+                eurRon,
+                tierName: tier.name || null,
+                feePercent: Number(tier.fee_percent ?? 0),
+                fixedFeeEur: Number(tier.fixed_fee_eur ?? 0)
+            };
+        } catch {
+            return null;
+        }
+    }
+
+    function computeOrderTotals(it, feeInfo) {
+        if (!it || !Number.isFinite(it.shares) || !Number.isFinite(it.price) || it.shares <= 0) {
+            return { gross: 0, fee: 0, total: 0 };
+        }
+
+        const gross = it.shares * it.price;
+
+        if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
+            return { gross, fee: 0, total: gross };
+        }
+
+        const variableFee = gross * (feeInfo.feePercent / 100);
+        const fixedFeeRon = feeInfo.fixedFeeEur * feeInfo.eurRon;
+        const fee = variableFee + fixedFeeRon;
+        const total = gross + fee;
+
+        return { gross, fee, total };
+    }
+
+    function buildSuggestionDetailsLine(it, feeInfo) {
+        if (!it || !Number.isFinite(it.shares) || !Number.isFinite(it.price) || it.shares <= 0) return "";
+        const t = computeOrderTotals(it, feeInfo);
+
+        if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
+            return `${it.shares} shares × ${it.price.toFixed(2)} ≈ ${t.gross.toFixed(2)}`;
+        }
+        return `${it.shares} shares × ${it.price.toFixed(2)} + ${t.fee.toFixed(2)} ≈ ${t.total.toFixed(2)}`;
+    }
+
+    function computeSuggestionsWithMarketPrices(normalizedBvb, portfolioWithValues, totalStocksValue, cashToInvest, minPerStock) {
+        const currentBySymbol = new Map(portfolioWithValues.map(p => [p.symbol, p]));
+        const targets = normalizedBvb.map(c => ({ symbol: c.symbol, t: c.normalizedWeight / 100 }));
 
         const V = totalStocksValue;
         const C = cashToInvest;
 
         const gaps = targets.map(x => {
-            const v = currentValueBySymbol.get(x.symbol) || 0;
+            const p = currentBySymbol.get(x.symbol);
+            const v = p ? p.value : 0;
+            const price = p ? p.market_price : NaN;
             const desired = (V + C) * x.t;
             const gap = Math.max(0, desired - v);
-            return { symbol: x.symbol, gap };
+            return { symbol: x.symbol, gap, price };
         });
 
         const totalGap = gaps.reduce((s, g) => s + g.gap, 0);
         if (totalGap <= 0) return { items: [], unallocated: C };
 
-        let allocations = gaps.map(g => ({ symbol: g.symbol, amount: (g.gap / totalGap) * C }));
-        allocations = enforceMinimum(allocations, C, minPerStock);
-        allocations = roundAllocationsDownAndDistribute(allocations, C, roundStep);
-
-        const allocatedSum = allocations.reduce((s, a) => s + a.amount, 0);
-        const unallocated = Math.max(0, C - allocatedSum);
-
-        return {
-            items: allocations.filter(a => a.amount > 0),
-            unallocated
-        };
-    }
-
-    function enforceMinimum(allocations, totalCash, minPerStock) {
-        if (!minPerStock || minPerStock <= 0) return allocations;
-
-        if (totalCash < minPerStock) {
-            const max = allocations.reduce((best, a) => (a.amount > best.amount ? a : best), allocations[0]);
-            return allocations.map(a => ({ symbol: a.symbol, amount: a.symbol === max.symbol ? totalCash : 0 }));
-        }
-
-        let active = allocations.slice();
-
-        while (true) {
-            const small = active.filter(a => a.amount > 0 && a.amount < minPerStock);
-            if (small.length === 0) break;
-
-            const smallSum = small.reduce((s, a) => s + a.amount, 0);
-            active = active.map(a => (a.amount < minPerStock ? { ...a, amount: 0 } : a));
-
-            const remaining = active.filter(a => a.amount > 0);
-            if (remaining.length === 0) return active;
-
-            const remSum = remaining.reduce((s, a) => s + a.amount, 0);
-
-            active = active.map(a => {
-                if (a.amount <= 0) return a;
-                const extra = (a.amount / remSum) * smallSum;
-                return { ...a, amount: a.amount + extra };
-            });
-        }
-
-        const sum = active.reduce((s, a) => s + a.amount, 0);
-        const scale = sum > 0 ? (totalCash / sum) : 1;
-        return active.map(a => ({ ...a, amount: a.amount * scale }));
-    }
-
-    function roundAllocationsDownAndDistribute(allocations, totalCash, step) {
-        if (!step || step <= 1) return allocations;
-
-        let rounded = allocations.map(a => ({
-            symbol: a.symbol,
-            amount: a.amount > 0 ? Math.floor(a.amount / step) * step : 0
+        let alloc = gaps.map(g => ({
+            symbol: g.symbol,
+            planned: (g.gap / totalGap) * C,
+            price: g.price
         }));
 
-        let sum = rounded.reduce((s, a) => s + a.amount, 0);
-        let leftover = totalCash - sum;
+        let items = alloc.map(a => {
+            const shares = Math.floor(a.planned / a.price);
+            const amount = shares > 0 ? shares * a.price : 0;
+            return { symbol: a.symbol, shares, amount, price: a.price };
+        });
 
-        if (leftover < step) return rounded;
-
-        const order = rounded
-            .map((a, idx) => ({ ...a, idx }))
-            .filter(a => a.amount > 0)
-            .sort((a, b) => b.amount - a.amount);
-
-        if (order.length === 0) return rounded;
-
-        let i = 0;
-        while (leftover >= step - 0.0001) {
-            const target = order[i % order.length];
-            rounded[target.idx].amount += step;
-            leftover -= step;
-            i++;
-
-            const checkSum = rounded.reduce((s2, x) => s2 + x.amount, 0);
-            if (checkSum > totalCash + 0.0001) {
-                rounded[target.idx].amount -= step;
-                break;
-            }
+        if (minPerStock && minPerStock > 0) {
+            items = items.map(it => (it.amount > 0 && it.amount < minPerStock) ? { ...it, shares: 0, amount: 0 } : it);
         }
 
-        return rounded;
+        let spent = items.reduce((s, it) => s + it.amount, 0);
+        let leftover = Math.max(0, C - spent);
+
+        const gapMap = new Map(gaps.map(g => [g.symbol, g.gap]));
+        function score(sym) { return gapMap.get(sym) || 0; }
+
+        let guard = 0;
+        while (leftover > 0.0001 && guard < 200000) {
+            guard++;
+
+            const candidates = items
+                .map((it, idx) => ({ ...it, idx }))
+                .filter(it => it.price > 0 && it.price <= leftover);
+
+            if (candidates.length === 0) break;
+
+            candidates.sort((a, b) => score(b.symbol) - score(a.symbol));
+
+            const pick = candidates[0];
+            items[pick.idx].shares += 1;
+            items[pick.idx].amount += pick.price;
+            leftover -= pick.price;
+
+            gapMap.set(pick.symbol, Math.max(0, score(pick.symbol) - pick.price));
+        }
+
+        if (minPerStock && minPerStock > 0) {
+            items = items.map(it => (it.amount > 0 && it.amount < minPerStock) ? { ...it, shares: 0, amount: 0 } : it);
+            spent = items.reduce((s, it) => s + it.amount, 0);
+            leftover = Math.max(0, C - spent);
+        }
+
+        const finalItems = items
+            .filter(it => it.amount > 0)
+            .map(it => ({ symbol: it.symbol, amount: it.amount, shares: it.shares, price: it.price }));
+
+        return { items: finalItems, unallocated: leftover };
     }
 
-    // ----------------------------
-    // After-suggestions simulation
-    // ----------------------------
     function portfolioAfterSuggestions(portfolioWithValues, items, totalStocksValue) {
         const map = new Map(portfolioWithValues.map(p => [p.symbol, { ...p }]));
-
         for (const it of items) {
             const existing = map.get(it.symbol);
-            if (existing) {
-                existing.value += it.amount;
-            } else {
-                map.set(it.symbol, { symbol: it.symbol, value: it.amount, weight: 0 });
-            }
+            if (existing) existing.value += it.amount;
+            else map.set(it.symbol, { symbol: it.symbol, value: it.amount, weight: 0, market_price: NaN });
         }
-
         const invested = items.reduce((s, it) => s + it.amount, 0);
         const newTotal = totalStocksValue + invested;
 
@@ -1201,7 +1423,6 @@
 
     function renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, oldTotalStocksValue, suggestions) {
         const { list, newTotal, invested } = after;
-
         const newW = new Map(list.map(x => [x.symbol, x.weight]));
 
         const rows = normalizedBvb.map(c => {
