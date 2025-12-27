@@ -24,27 +24,23 @@
 
     <div class="card">
         <p>
-            This project helps compare a personal BVB portfolio against the BET index distribution and suggests how to invest
-            available cash to move the portfolio closer to the index — using <b>buy-only</b> allocations (no selling).
+            This tool compares a personal BVB portfolio against the BET index distribution
+            and (optionally) suggests how to invest available cash to move the portfolio closer to the index —
+            using <b>buy-only</b> allocations (no selling).
         </p>
-        <p>
-            Live app:
-            <a href="https://dragosgeornoiu.github.io/bvb-index-distribution/" target="_blank" rel="noopener noreferrer">
-                https://dragosgeornoiu.github.io/bvb-index-distribution/
-            </a>
+        <p class="muted">
+            Notes: This is a personal tracking tool. Index weights and commission tiers are best-effort snapshots.
+            Nothing here is financial advice.
         </p>
     </div>
 
-    <h3>How it works</h3>
+    <h3>How data is loaded</h3>
     <div class="card">
         <ul>
-            <li><b>BET weights</b> are fetched from a daily-scraped CSV committed by a GitHub Action.</li>
-            <li><b>Your portfolio</b> can be imported either via CSV upload or via TradeVille copy/paste.</li>
+            <li><b>BET weights</b> are loaded from a daily-scraped CSV committed by a GitHub Action.</li>
+            <li><b>Your portfolio</b> can be imported via CSV upload or via TradeVille copy/paste.</li>
             <li><b>CASH_VALUE</b> represents available cash and is excluded from portfolio weights.</li>
-            <li>The app compares portfolio weights vs normalized index weights.</li>
-            <li>If <b>New Investment</b> is enabled, the app proposes buy-only allocations.</li>
-            <li>Allocations respect a configurable minimum per stock and are rounded down to lots of 50.</li>
-            <li>A second table shows <b>portfolio after applying suggestions</b> for validation.</li>
+            <li><b>Market prices</b> are required for investment suggestions (whole shares).</li>
         </ul>
     </div>
 
@@ -54,25 +50,25 @@
         <h4>1) Portfolio CSV upload</h4>
         <p>Upload a CSV file with the following format:</p>
 
-        <pre><code>symbol,value
-SNP,126057.38
-TLV,121373.78
-SNG,75962.08
+        <pre><code>symbol,value,market_price
+SNP,126506.66,0.9855
+TLV,122179.18,30.34
+SNG,77051.70,9.90
 ...
-CASH_VALUE,12023.80</code></pre>
+CASH_VALUE,12023.80,</code></pre>
 
         <ul>
             <li><b>symbol</b> — BVB ticker</li>
-            <li><b>value</b> — current position value (not percentage)</li>
-            <li><b>CASH_VALUE</b> — available cash (optional)</li>
+            <li><b>value</b> — current position value (RON), not percentage</li>
+            <li><b>market_price</b> — current market price (RON / share). Full precision is preserved (no rounding).</li>
+            <li><b>CASH_VALUE</b> — available cash row (optional). Leave market_price empty.</li>
         </ul>
     </div>
 
     <div class="card">
         <h4>2) TradeVille copy / paste import</h4>
-
         <p>
-            You can also paste your portfolio table directly from TradeVille.
+            You can paste your portfolio table directly from TradeVille.
             The parser is intentionally tolerant and ignores extra text.
         </p>
 
@@ -85,33 +81,91 @@ CASH_VALUE,12023.80</code></pre>
 
         <p>Example (direct copy from TradeVille):</p>
 
-        <pre><code>simbol      Nume                    sold   Pret piata   evaluare   Pondere
-SNP         OMV Petrom              128,368 0.9760       125,287.17 20.57%
-TLV         Banca Transilvania      4,027   30.22        121,695.94 19.98%
-SNG         Romgaz                  7,783   9.78         76,117.74  12.50%
+        <pre><code>simbol      ...   sold   Pret piata   ...   evaluare   ...
+SNP         ...   128,368 0.9855      ...   126,506.66 ...
+TLV         ...   4,027   30.34       ...   122,179.18 ...
 ...
-RON         RON                     12,023.80</code></pre>
+RON         ...   12,023.80</code></pre>
 
-        <p>
-            The app automatically:
-        </p>
+        <p>The app automatically:</p>
         <ul>
-            <li>extracts symbols and evaluated values</li>
-            <li>detects the <b>RON</b> row and maps it to <b>CASH_VALUE</b></li>
-            <li>ignores any rows it cannot safely parse</li>
+            <li>extracts <b>symbol</b>, <b>evaluare</b> (value), and <b>Pret piata</b> (market_price)</li>
+            <li>detects the <b>RON</b> cash row and maps it to <b>CASH_VALUE</b></li>
+            <li>ignores rows it cannot safely parse</li>
         </ul>
     </div>
 
-    <h3>Index data</h3>
+    <h3>Tables and columns</h3>
+    <div class="card">
+        <h4>1) Portfolio Comparison</h4>
+        <p>
+            This table compares your current portfolio weights against the index.
+            Index weights are normalized to 100% within the chosen universe.
+        </p>
+        <ul>
+            <li><b>Symbol</b> — BVB ticker</li>
+            <li><b>BVB Weight</b> — raw index weight from the snapshot</li>
+            <li><b>Normalized BVB Weight</b> — re-scaled to 100% (especially when using “Only consider companies in my portfolio”)</li>
+            <li><b>Portfolio Weight</b> — based on stocks-only portfolio total (CASH_VALUE excluded)</li>
+            <li><b>Difference (Val and %)</b> — value difference in RON and percentage points</li>
+        </ul>
+
+        <p class="muted">
+            Sanity check: the sum of value differences should be ~0 (small floating-point error is expected).
+        </p>
+
+        <h4 style="margin-top:14px;">2) Portfolio after applying suggestions</h4>
+        <p>
+            After suggestions are generated, a second table simulates the portfolio after applying them (gross invested only).
+            Fees are not added to holdings (fees are costs, not assets).
+        </p>
+        <ul>
+            <li><b>Normalized BVB Weight</b> — same target as above</li>
+            <li><b>New Portfolio Weight</b> — weights after adding suggested gross investments</li>
+            <li><b>New Difference (Val and %)</b> — post-suggestion deviation from target</li>
+        </ul>
+    </div>
+
+    <h3>Investment suggestions algorithm</h3>
     <div class="card">
         <p>
-            Index weights are automatically fetched from a daily-generated CSV:
+            Suggestions are computed using market prices and whole shares (no fractional shares).
+            The algorithm is fee-aware and buy-only.
         </p>
+
+        <h4>Constraints</h4>
+        <ul>
+            <li><b>Budget</b>: total cost (gross + estimated fees) never exceeds available cash</li>
+            <li><b>Whole shares</b>: buys are integer shares only</li>
+            <li><b>Minimum per stock</b>: when a new symbol is introduced in suggestions, it must be able to reach the minimum gross investment (e.g. 500 RON) within remaining cash</li>
+            <li><b>Fees</b>: estimated using a tier snapshot (variable % + fixed fee once per symbol)</li>
+        </ul>
+
+        <h4>Optimization strategy</h4>
+        <ul>
+            <li><b>Step 1 (tracking)</b>: repeatedly add the single share that most improves index tracking
+                (minimizes total squared error across all symbols), while staying within budget.</li>
+            <li><b>Step 2 (spend remaining cash)</b>: if cash remains, continue buying the “least harmful” next share
+                to spend as much as possible while keeping tracking close.</li>
+        </ul>
+
+        <p class="muted">
+            Prices are not rounded in the UI to avoid misleading share-cost math (e.g. 0.9855 must stay 0.9855).
+        </p>
+    </div>
+
+    <h3>Index data format</h3>
+    <div class="card">
+        <p>Index weights are loaded from a daily-generated CSV:</p>
 
         <pre><code>symbol,weight
 TLV,19.30
 SNP,19.03
 ...</code></pre>
+
+        <p class="muted">
+            When “Only consider companies in my portfolio” is enabled, these weights are normalized over your portfolio symbols.
+        </p>
     </div>
 </div>
 
