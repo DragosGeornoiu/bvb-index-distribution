@@ -14,8 +14,218 @@
         }
 
         .muted { font-size: 13px; color: #666; }
+        .spacer-8 { height: 8px; }
         .spacer-16 { height: 16px; }
         .spacer-24 { height: 24px; }
+
+        .section { margin-bottom: 18px; }
+
+        .row-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-secondary {
+            background-color: #6c63ff;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: none;
+            width: auto;
+        }
+
+        .card-like {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            padding: 14px;
+        }
+
+        textarea.tradeville-input {
+            width: 100%;
+            min-height: 160px;
+            resize: vertical;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            background: #fff;
+        }
+
+        .small-table td, .small-table th {
+            padding: 8px;
+        }
+        .right { text-align: right; }
+        .center { text-align: center; }
+
+        /* ---------- UI additions ---------- */
+
+        /* green "Loaded (n rows)" badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            line-height: 1;
+            border: 1px solid transparent;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .badge-success {
+            background: rgba(46,160,67,0.12);
+            color: #2ea043;
+            border-color: rgba(46,160,67,0.25);
+        }
+        .badge-neutral {
+            background: rgba(108,99,255,0.10);
+            color: #6c63ff;
+            border-color: rgba(108,99,255,0.25);
+        }
+
+        /* status rows: keep badges on NEXT row (so not far right) */
+        .status-row {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        /* nicer segmented switch (CSV vs Tradeville)
+           Fix: avoid any "gray showing below" by giving each segment its own background
+           and matching heights exactly. */
+        .segmented {
+            display: inline-flex;
+            border: 1px solid rgba(108,99,255,0.35);
+            border-radius: 999px;
+            overflow: hidden;
+            background: transparent; /* important: no shared background peeking through */
+            height: 38px;           /* fixed height so active fill always covers fully */
+        }
+        .segmented input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .segmented label {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 14px;
+            height: 38px;            /* match container height */
+            font-size: 13px;
+            cursor: pointer;
+            color: #6c63ff;
+            user-select: none;
+            white-space: nowrap;
+            background: rgba(108,99,255,0.10); /* inactive fill */
+            box-sizing: border-box;
+        }
+        .segmented label + label {
+            border-left: 1px solid rgba(108,99,255,0.25);
+        }
+        .segmented label.active {
+            background: #6c63ff; /* active fill covers full height */
+            color: #fff;
+        }
+
+        /* soft transitions when switching import blocks */
+        .collapse-wrap {
+            overflow: hidden;
+            transition: max-height 220ms ease, opacity 220ms ease, transform 220ms ease;
+            opacity: 1;
+            transform: translateY(0);
+            max-height: 2000px;
+        }
+        .collapse-wrap.is-hidden {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-6px);
+            pointer-events: none;
+        }
+
+        /* imported portfolio values collapsible */
+        details.import-details {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: #fff;
+            padding: 10px 12px;
+        }
+        details.import-details > summary {
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            font-weight: 600;
+        }
+        details.import-details > summary::-webkit-details-marker { display: none; }
+        .summary-hint {
+            font-weight: 400;
+            color: #666;
+            font-size: 12px;
+        }
+        .chev {
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid rgba(0,0,0,0.45);
+            border-bottom: 2px solid rgba(0,0,0,0.45);
+            transform: rotate(45deg);
+            transition: transform 160ms ease;
+            margin-left: 8px;
+            flex: 0 0 auto;
+        }
+        details[open] .chev { transform: rotate(225deg); }
+
+        /* Yes/No switch */
+        .yn {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .yn-label { font-weight: 600; }
+        .yn-switch {
+            display: inline-flex;
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid rgba(108,99,255,0.35);
+            background: rgba(108,99,255,0.10);
+        }
+        .yn-switch button {
+            border: 0;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 13px;
+            color: #6c63ff;
+            background: transparent;
+            transition: background 160ms ease, color 160ms ease;
+            min-width: 54px;
+        }
+        .yn-switch button + button {
+            border-left: 1px solid rgba(108,99,255,0.25);
+        }
+        .yn-switch button.active {
+            background: #6c63ff;
+            color: #fff;
+        }
+        .yn-hidden-checkbox {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* keep the two Y/N switches on separate rows */
+        .yn-row { margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -53,26 +263,95 @@
                 Open latest
             </a>
         </div>
-        <div style="margin-top: 8px;" class="muted">
-            Status: <span id="bvbLoadStatus">Will be loaded on Generate Report</span>
+
+        <div class="status-row">
+            <div class="muted">Status: <span id="bvbLoadStatus">Will be loaded on Generate Report</span></div>
+            <span id="bvbRowsBadge" class="badge badge-success" style="display:none;"></span>
         </div>
     </div>
 
-    <!-- Portfolio CSV -->
-    <div class="file-input section">
-        <label for="portfolioFile">Upload Current Portfolio CSV (symbol,value)</label>
-        <div class="file-wrapper">
-            <label for="portfolioFile" class="file-label">Choose file</label>
-            <input type="file" id="portfolioFile" accept=".csv,.txt" />
-            <span class="file-name" id="portfolioFileName">No file chosen</span>
+    <!-- Portfolio import mode -->
+    <div class="section">
+        <label>Portfolio import</label>
+
+        <div style="margin-top: 8px;">
+            <div class="segmented" id="importSegmented">
+                <input type="radio" name="importMode" id="importModeCsv" value="csv" checked />
+                <label for="importModeCsv" id="segCsv" class="active">CSV upload</label>
+
+                <input type="radio" name="importMode" id="importModePaste" value="paste" />
+                <label for="importModePaste" id="segPaste">Tradeville copy/paste</label>
+            </div>
         </div>
-        <div style="margin-top: 8px;" class="muted">
-            Expected headers: <b>symbol,value</b>. Use <b>CASH_VALUE</b> row for available cash
-            (e.g. <code>CASH_VALUE,12023.80</code>).
+
+        <div class="spacer-16"></div>
+
+        <!-- CSV upload block -->
+        <div id="csvImportBlock" class="collapse-wrap">
+            <div class="file-input">
+                <label for="portfolioFile">Upload Current Portfolio CSV (symbol,value)</label>
+                <div class="file-wrapper">
+                    <label for="portfolioFile" class="file-label">Choose file</label>
+                    <input type="file" id="portfolioFile" accept=".csv,.txt" />
+                    <span class="file-name" id="portfolioFileName">No file chosen</span>
+                </div>
+
+                <div style="margin-top: 8px;" class="muted">
+                    Expected headers: <b>symbol,value</b>. Use <b>CASH_VALUE</b> row for available cash
+                    (e.g. <code>CASH_VALUE,12023.80</code>).
+                </div>
+
+                <div class="status-row">
+                    <div class="muted">Detected: <span id="portfolioParseStatus">No file loaded</span></div>
+                    <span id="portfolioRowsBadge" class="badge badge-success" style="display:none;"></span>
+                </div>
+            </div>
         </div>
-        <div style="margin-top: 6px;" class="muted">
-            Detected: <span id="portfolioParseStatus">No file loaded</span>
+
+        <!-- Paste import block -->
+        <div id="pasteImportBlock" class="collapse-wrap is-hidden">
+            <div class="card-like">
+                <div class="muted" style="margin-bottom: 8px;">
+                    Paste the Tradeville portfolio table here. Extra text before/after is fine.
+                    The parser looks for instrument lines and the <b>RON</b> cash line (mapped to <b>CASH_VALUE</b>).
+                </div>
+
+                <textarea id="tradevilleText" class="tradeville-input" placeholder="Paste Tradeville table text here..."></textarea>
+
+                <div class="spacer-8"></div>
+
+                <div class="row-actions">
+                    <button id="parseTradevilleBtn" class="btn-secondary" type="button">Parse pasted text</button>
+                </div>
+
+                <div class="status-row">
+                    <div class="muted">Detected: <span id="tradevilleParseStatus">No pasted data</span></div>
+                    <span id="tradevilleRowsBadge" class="badge badge-success" style="display:none;"></span>
+                </div>
+            </div>
         </div>
+    </div>
+
+    <!-- Imported portfolio preview (collapsible) -->
+    <div id="importPreviewBlock" class="section" style="display:none;">
+        <details class="import-details" id="importPreviewDetails">
+            <summary>
+                <span>
+                    Imported portfolio values
+                    <span class="summary-hint" id="importPreviewHint">· click to expand</span>
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:10px;">
+                    <span id="importPreviewRowsBadge" class="badge badge-success" style="display:none;"></span>
+                    <span class="chev" aria-hidden="true"></span>
+                </span>
+            </summary>
+
+            <div class="spacer-8"></div>
+            <div class="muted" style="margin-bottom: 10px;">
+                This is the normalized input used for report generation (stocks-only weights; CASH_VALUE excluded from weights).
+            </div>
+            <div id="importPreviewTable"></div>
+        </details>
     </div>
 
     <!-- Total Portfolio Value (stocks-only) -->
@@ -89,16 +368,24 @@
         </div>
     </div>
 
-    <!-- Filter Portfolio Toggle -->
-    <div class="toggle-container section">
-        <label for="filterPortfolioToggle">Only consider companies in my portfolio</label>
-        <input type="checkbox" id="filterPortfolioToggle" checked />
+    <!-- Filter Portfolio Toggle (Yes/No switch UI) -->
+    <div class="section yn yn-row">
+        <span class="yn-label">Only consider companies in my portfolio</span>
+        <input type="checkbox" id="filterPortfolioToggle" class="yn-hidden-checkbox" checked />
+        <div class="yn-switch" role="group" aria-label="Only consider companies in my portfolio">
+            <button type="button" id="filterYes" class="active">Yes</button>
+            <button type="button" id="filterNo">No</button>
+        </div>
     </div>
 
-    <!-- New Investment Toggle -->
-    <div class="toggle-container section">
-        <label for="newInvestmentToggle">Enable New Investment</label>
-        <input type="checkbox" id="newInvestmentToggle" />
+    <!-- New Investment Toggle (Yes/No switch UI) -->
+    <div class="section yn yn-row">
+        <span class="yn-label">Enable New Investment</span>
+        <input type="checkbox" id="newInvestmentToggle" class="yn-hidden-checkbox" />
+        <div class="yn-switch" role="group" aria-label="Enable New Investment">
+            <button type="button" id="investYes">Yes</button>
+            <button type="button" id="investNo" class="active">No</button>
+        </div>
     </div>
 
     <!-- New Investment Inputs -->
@@ -134,23 +421,105 @@
 
     const bvbLoadStatusEl = document.getElementById("bvbLoadStatus");
     const portfolioParseStatusEl = document.getElementById("portfolioParseStatus");
+    const tradevilleParseStatusEl = document.getElementById("tradevilleParseStatus");
     const totalInvestmentEl = document.getElementById("totalInvestment");
     const newInvestmentAmountEl = document.getElementById("newInvestmentAmount");
 
+    const importPreviewBlockEl = document.getElementById("importPreviewBlock");
+    const importPreviewTableEl = document.getElementById("importPreviewTable");
+
+    // badges
+    const bvbRowsBadgeEl = document.getElementById("bvbRowsBadge");
+    const portfolioRowsBadgeEl = document.getElementById("portfolioRowsBadge");
+    const tradevilleRowsBadgeEl = document.getElementById("tradevilleRowsBadge");
+    const importPreviewRowsBadgeEl = document.getElementById("importPreviewRowsBadge");
+
     let parsedPortfolio = null;
 
-    document.getElementById("newInvestmentToggle").addEventListener("change", function () {
-        document.getElementById("investmentFields").style.display = this.checked ? "block" : "none";
-    });
+    // ----------------------------
+    // Import mode switching (UI only)
+    // ----------------------------
+    const importModeCsvEl = document.getElementById("importModeCsv");
+    const importModePasteEl = document.getElementById("importModePaste");
+    const csvImportBlockEl = document.getElementById("csvImportBlock");
+    const pasteImportBlockEl = document.getElementById("pasteImportBlock");
 
+    const segCsvEl = document.getElementById("segCsv");
+    const segPasteEl = document.getElementById("segPaste");
+
+    function setSegmentActive(isCsv) {
+        segCsvEl.classList.toggle("active", isCsv);
+        segPasteEl.classList.toggle("active", !isCsv);
+    }
+
+    function setImportMode(mode) {
+        const isCsv = mode === "csv";
+        setSegmentActive(isCsv);
+
+        csvImportBlockEl.classList.toggle("is-hidden", !isCsv);
+        pasteImportBlockEl.classList.toggle("is-hidden", isCsv);
+
+        // Reset statuses when switching
+        if (isCsv) {
+            tradevilleParseStatusEl.textContent = "No pasted data";
+            tradevilleRowsBadgeEl.style.display = "none";
+        } else {
+            portfolioParseStatusEl.textContent = "No file loaded";
+            portfolioRowsBadgeEl.style.display = "none";
+            document.getElementById("portfolioFileName").textContent = "No file chosen";
+            document.getElementById("portfolioFile").value = "";
+        }
+    }
+
+    importModeCsvEl.addEventListener("change", () => setImportMode("csv"));
+    importModePasteEl.addEventListener("change", () => setImportMode("paste"));
+
+    // ----------------------------
+    // Yes/No switches (UI only)
+    // ----------------------------
+    const filterToggleEl = document.getElementById("filterPortfolioToggle");
+    const filterYesBtn = document.getElementById("filterYes");
+    const filterNoBtn = document.getElementById("filterNo");
+
+    function syncFilterButtons() {
+        const on = !!filterToggleEl.checked;
+        filterYesBtn.classList.toggle("active", on);
+        filterNoBtn.classList.toggle("active", !on);
+    }
+    filterYesBtn.addEventListener("click", () => { filterToggleEl.checked = true; syncFilterButtons(); });
+    filterNoBtn.addEventListener("click", () => { filterToggleEl.checked = false; syncFilterButtons(); });
+    syncFilterButtons();
+
+    const newInvToggleEl = document.getElementById("newInvestmentToggle");
+    const investYesBtn = document.getElementById("investYes");
+    const investNoBtn = document.getElementById("investNo");
+
+    function syncInvestmentButtons() {
+        const on = !!newInvToggleEl.checked;
+        investYesBtn.classList.toggle("active", on);
+        investNoBtn.classList.toggle("active", !on);
+        document.getElementById("investmentFields").style.display = on ? "block" : "none";
+    }
+    investYesBtn.addEventListener("click", () => { newInvToggleEl.checked = true; syncInvestmentButtons(); });
+    investNoBtn.addEventListener("click", () => { newInvToggleEl.checked = false; syncInvestmentButtons(); });
+    newInvToggleEl.addEventListener("change", syncInvestmentButtons);
+    syncInvestmentButtons();
+
+    // ----------------------------
+    // CSV import
+    // ----------------------------
     document.getElementById("portfolioFile").addEventListener("change", function () {
         const file = this.files[0];
         document.getElementById("portfolioFileName").textContent = file ? file.name : "No file chosen";
 
         parsedPortfolio = null;
         portfolioParseStatusEl.textContent = "Parsing...";
+        portfolioRowsBadgeEl.style.display = "none";
+        importPreviewRowsBadgeEl.style.display = "none";
+
         totalInvestmentEl.value = "";
         newInvestmentAmountEl.value = "";
+        hideImportPreview();
 
         if (!file) {
             portfolioParseStatusEl.textContent = "No file loaded";
@@ -165,9 +534,9 @@
                 const hasValue = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], "value");
                 if (!hasValue) throw new Error("Portfolio CSV must contain headers: symbol,value");
 
-                const { portfolio, totalStocksValue, cashValue, totalAllValue } = portfolioValues(rows);
+                const { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks } = portfolioValues(rows);
 
-                parsedPortfolio = { portfolio, totalStocksValue, cashValue, totalAllValue };
+                parsedPortfolio = { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks, source: "csv" };
 
                 totalInvestmentEl.value = totalStocksValue.toFixed(2);
 
@@ -179,18 +548,83 @@
                     portfolioParseStatusEl.textContent =
                         `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no CASH_VALUE row found)`;
                 }
+
+                const totalRows = (rawStocks?.length || 0) + (cashValue > 0 ? 1 : 0);
+                portfolioRowsBadgeEl.textContent = `Loaded (${totalRows} rows)`;
+                portfolioRowsBadgeEl.style.display = "inline-flex";
+
+                renderImportPreview(parsedPortfolio);
             } catch (e) {
                 console.error(e);
                 portfolioParseStatusEl.textContent = "Failed ❌";
+                portfolioRowsBadgeEl.style.display = "none";
                 alert(`Could not parse portfolio CSV: ${e.message}`);
             }
         };
         reader.readAsText(file);
     });
 
+    // ----------------------------
+    // Tradeville paste import
+    // ----------------------------
+    document.getElementById("parseTradevilleBtn").addEventListener("click", function () {
+        const text = String(document.getElementById("tradevilleText").value || "").trim();
+
+        parsedPortfolio = null;
+        tradevilleParseStatusEl.textContent = "Parsing...";
+        tradevilleRowsBadgeEl.style.display = "none";
+        importPreviewRowsBadgeEl.style.display = "none";
+
+        totalInvestmentEl.value = "";
+        newInvestmentAmountEl.value = "";
+        hideImportPreview();
+
+        if (!text) {
+            tradevilleParseStatusEl.textContent = "No pasted data";
+            return;
+        }
+
+        try {
+            const rows = parseTradevilleToRows(text);
+
+            if (!rows || rows.length === 0) {
+                throw new Error("No usable instrument rows found. Make sure you pasted the Tradeville table.");
+            }
+
+            const { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks } = portfolioValues(rows);
+
+            parsedPortfolio = { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks, source: "tradeville" };
+
+            totalInvestmentEl.value = totalStocksValue.toFixed(2);
+
+            if (cashValue > 0) {
+                newInvestmentAmountEl.value = cashValue.toFixed(2);
+                tradevilleParseStatusEl.textContent =
+                    `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, CASH_VALUE: ${cashValue.toFixed(2)})`;
+            } else {
+                tradevilleParseStatusEl.textContent =
+                    `Loaded ✅ (stocks: ${totalStocksValue.toFixed(2)}, no RON/CASH line detected)`;
+            }
+
+            const totalRows = (rawStocks?.length || 0) + (cashValue > 0 ? 1 : 0);
+            tradevilleRowsBadgeEl.textContent = `Loaded (${totalRows} rows)`;
+            tradevilleRowsBadgeEl.style.display = "inline-flex";
+
+            renderImportPreview(parsedPortfolio);
+        } catch (e) {
+            console.error(e);
+            tradevilleParseStatusEl.textContent = "Failed ❌";
+            tradevilleRowsBadgeEl.style.display = "none";
+            alert(`Could not parse pasted Tradeville data: ${e.message}`);
+        }
+    });
+
+    // ----------------------------
+    // Report generation (logic unchanged)
+    // ----------------------------
     document.getElementById("generateReport").addEventListener("click", async function () {
         if (!parsedPortfolio) {
-            alert("Please upload the portfolio file (symbol,value).");
+            alert("Please import your portfolio first (CSV upload or Tradeville copy/paste).");
             return;
         }
 
@@ -215,8 +649,9 @@
             return;
         }
 
-        // Load BVB latest CSV on demand
         bvbLoadStatusEl.textContent = "Loading...";
+        bvbRowsBadgeEl.style.display = "none";
+
         let bvbText;
         try {
             const cacheBuster = `t=${Date.now()}`;
@@ -233,6 +668,10 @@
 
         const bvbData = parseCSV(bvbText);
 
+        const bvbCount = Array.isArray(bvbData) ? bvbData.filter(r => r && r.symbol).length : 0;
+        bvbRowsBadgeEl.textContent = `Loaded (${bvbCount} rows)`;
+        bvbRowsBadgeEl.style.display = "inline-flex";
+
         generateReportAndSuggestions(
             bvbData,
             parsedPortfolio.portfolio,
@@ -242,6 +681,158 @@
             newInvestmentEnabled ? minInvestmentAmount : 0
         );
     });
+
+    // ----------------------------
+    // Import preview UI (collapsible)
+    // ----------------------------
+    function hideImportPreview() {
+        importPreviewBlockEl.style.display = "none";
+        importPreviewTableEl.innerHTML = "";
+        importPreviewRowsBadgeEl.style.display = "none";
+    }
+
+    function renderImportPreview(state) {
+        if (!state) return;
+
+        const stockRows = (state.rawStocks || []).slice().sort((a, b) => b.value - a.value);
+        const cash = state.cashValue || 0;
+
+        const rowsHtml = stockRows.map(r => {
+            const weight = (r.value / state.totalStocksValue) * 100;
+            return `
+                <tr>
+                    <td class="center">${escapeHtml(r.symbol)}</td>
+                    <td class="right">${r.value.toFixed(2)}</td>
+                    <td class="right">${weight.toFixed(2)}%</td>
+                </tr>
+            `;
+        }).join("");
+
+        const cashRowHtml = cash > 0 ? `
+            <tr>
+                <td class="center"><b>CASH_VALUE</b></td>
+                <td class="right">${cash.toFixed(2)}</td>
+                <td class="right muted">excluded</td>
+            </tr>
+        ` : "";
+
+        importPreviewTableEl.innerHTML = `
+            <table class="small-table">
+                <tr>
+                    <th>Symbol</th>
+                    <th>Value</th>
+                    <th>Weight (stocks-only)</th>
+                </tr>
+                ${rowsHtml}
+                ${cashRowHtml}
+            </table>
+        `;
+
+        const totalRows = stockRows.length + (cash > 0 ? 1 : 0);
+        importPreviewRowsBadgeEl.textContent = `Loaded (${totalRows} rows)`;
+        importPreviewRowsBadgeEl.style.display = "inline-flex";
+
+        importPreviewBlockEl.style.display = "block";
+    }
+
+    function escapeHtml(s) {
+        return String(s)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    // ----------------------------
+    // Tradeville parser
+    // ----------------------------
+    function parseTradevilleToRows(text) {
+        const lines = String(text)
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+
+        const out = [];
+        let detectedCash = null;
+
+        for (const line of lines) {
+            const normalized = line.replace(/\u00A0/g, " ");
+            const parts = splitLooseColumns(normalized);
+
+            if (parts.length < 3) continue;
+
+            if (parts[0].toUpperCase() === "RON") {
+                const cash = findFirstMoneyLike(parts);
+                if (Number.isFinite(cash) && cash > 0) {
+                    detectedCash = cash;
+                }
+                continue;
+            }
+
+            const sym = parts[0].trim();
+            if (!/^[A-Z0-9]{1,6}$/.test(sym)) continue;
+
+            const last = parts[parts.length - 1];
+            if (!/%$/.test(String(last))) continue;
+
+            const evalToken = parts[parts.length - 3];
+            const evaluare = parseMoney(evalToken);
+
+            if (!Number.isFinite(evaluare) || evaluare <= 0) continue;
+
+            out.push({ symbol: sym, value: evaluare });
+        }
+
+        if (Number.isFinite(detectedCash) && detectedCash > 0) {
+            out.push({ symbol: "CASH_VALUE", value: detectedCash });
+        }
+
+        const merged = new Map();
+        for (const r of out) {
+            const k = String(r.symbol).trim();
+            const v = Number(r.value);
+            if (!k || !Number.isFinite(v)) continue;
+            merged.set(k, (merged.get(k) || 0) + v);
+        }
+
+        return Array.from(merged.entries()).map(([symbol, value]) => ({ symbol, value }));
+    }
+
+    function splitLooseColumns(line) {
+        if (line.includes("\t")) {
+            return line.split("\t").map(s => s.trim()).filter(s => s !== "");
+        }
+        return line.split(/\s{2,}/g).map(s => s.trim()).filter(s => s !== "");
+    }
+
+    function parseMoney(raw) {
+        if (raw == null) return NaN;
+        let s = String(raw).trim();
+        s = s.replace(/[A-Za-z]/g, "").trim();
+        s = s.replace(/%/g, "").trim();
+        s = s.replace(/\s/g, "");
+
+        if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) {
+            s = s.replace(/,/g, "");
+        }
+        if (/^\d+,\d+$/.test(s)) {
+            s = s.replace(",", ".");
+        }
+
+        const n = Number(s);
+        return Number.isFinite(n) ? n : NaN;
+    }
+
+    function findFirstMoneyLike(parts) {
+        for (const p of parts) {
+            const n = parseMoney(p);
+            if (Number.isFinite(n) && n > 0) return n;
+        }
+        return NaN;
+    }
 
     // ----------------------------
     // CSV parsing (comma/semicolon/tab + basic quoting)
@@ -326,7 +917,6 @@
                 obj[h] = toNumberMaybe(values[idx] ?? "");
             });
 
-            // Header normalization
             if (obj.Symbol && !obj.symbol) obj.symbol = obj.Symbol;
             if (obj.VALUE && !obj.value) obj.value = obj.VALUE;
 
@@ -362,11 +952,10 @@
             weight: (r.value / totalStocksValue) * 100
         }));
 
-        return { portfolio, totalStocksValue, cashValue, totalAllValue };
+        return { portfolio, totalStocksValue, cashValue, totalAllValue, rawStocks: stockRows };
     }
 
     function formatZeroNoMinus(x) {
-        // Avoid displaying "-0.00"
         if (Math.abs(x) < 0.005) return "0.00";
         return x.toFixed(2);
     }
@@ -389,14 +978,12 @@
         suggestionsDiv.innerHTML = "";
         afterDiv.innerHTML = "";
 
-        // Determine the BVB universe to compare against
         let bvbUniverse = bvbData;
         if (onlyPortfolioCompanies) {
             const owned = new Set(portfolioWithValues.map(p => p.symbol));
             bvbUniverse = bvbData.filter(b => owned.has(b.symbol));
         }
 
-        // Normalize BVB weights to 100% for the current universe
         const totalBvbWeight = bvbUniverse.reduce((sum, c) => sum + (Number(c.weight) || 0), 0);
         const normalizedBvb = bvbUniverse.map(c => ({
             symbol: c.symbol,
@@ -404,7 +991,6 @@
             normalizedWeight: ((Number(c.weight) || 0) / totalBvbWeight) * 100
         }));
 
-        // Render comparison table and compute sum of diffs as a sanity check
         let sumDiff = 0;
         const rowsHtml = normalizedBvb.map(c => {
             const p = portfolioWithValues.find(x => x.symbol === c.symbol);
@@ -457,7 +1043,6 @@
 
         const allocated = suggestions.items.reduce((s, x) => s + x.amount, 0);
 
-        // Render suggestion cards
         const listItems = suggestions.items.map(it => `
             <li>
                 <div class="investment-symbol">${it.symbol}</div>
@@ -475,7 +1060,6 @@
             </ul>
         `;
 
-        // Simulate portfolio after applying suggestions
         const after = portfolioAfterSuggestions(portfolioWithValues, suggestions.items, totalStocksValue);
         renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions);
     }
@@ -486,13 +1070,11 @@
     function computeSuggestions(normalizedBvb, portfolioWithValues, totalStocksValue, cashToInvest, minPerStock, roundStep) {
         const currentValueBySymbol = new Map(portfolioWithValues.map(p => [p.symbol, p.value]));
 
-        // Target weights as fractions
         const targets = normalizedBvb.map(c => ({
             symbol: c.symbol,
             t: c.normalizedWeight / 100
         }));
 
-        // Compute positive gaps to reach target if we can only buy (no selling)
         const V = totalStocksValue;
         const C = cashToInvest;
 
@@ -506,13 +1088,8 @@
         const totalGap = gaps.reduce((s, g) => s + g.gap, 0);
         if (totalGap <= 0) return { items: [], unallocated: C };
 
-        // Proportional allocation
         let allocations = gaps.map(g => ({ symbol: g.symbol, amount: (g.gap / totalGap) * C }));
-
-        // Minimum per stock (iteratively remove too-small allocations and redistribute)
         allocations = enforceMinimum(allocations, C, minPerStock);
-
-        // Round down to steps and then distribute leftover steps without exceeding cash
         allocations = roundAllocationsDownAndDistribute(allocations, C, roundStep);
 
         const allocatedSum = allocations.reduce((s, a) => s + a.amount, 0);
@@ -527,7 +1104,6 @@
     function enforceMinimum(allocations, totalCash, minPerStock) {
         if (!minPerStock || minPerStock <= 0) return allocations;
 
-        // If total cash can't meet the minimum, allocate everything to the top candidate
         if (totalCash < minPerStock) {
             const max = allocations.reduce((best, a) => (a.amount > best.amount ? a : best), allocations[0]);
             return allocations.map(a => ({ symbol: a.symbol, amount: a.symbol === max.symbol ? totalCash : 0 }));
@@ -554,7 +1130,6 @@
             });
         }
 
-        // Normalize to avoid float drift
         const sum = active.reduce((s, a) => s + a.amount, 0);
         const scale = sum > 0 ? (totalCash / sum) : 1;
         return active.map(a => ({ ...a, amount: a.amount * scale }));
@@ -563,19 +1138,16 @@
     function roundAllocationsDownAndDistribute(allocations, totalCash, step) {
         if (!step || step <= 1) return allocations;
 
-        // 1) Round down so the sum never exceeds totalCash
         let rounded = allocations.map(a => ({
             symbol: a.symbol,
             amount: a.amount > 0 ? Math.floor(a.amount / step) * step : 0
         }));
 
-        // 2) Distribute leftover in +step chunks, still never exceeding totalCash
         let sum = rounded.reduce((s, a) => s + a.amount, 0);
         let leftover = totalCash - sum;
 
         if (leftover < step) return rounded;
 
-        // Add to the largest allocations first
         const order = rounded
             .map((a, idx) => ({ ...a, idx }))
             .filter(a => a.amount > 0)
@@ -590,7 +1162,6 @@
             leftover -= step;
             i++;
 
-            // Safety guard in case of floating point drift
             const checkSum = rounded.reduce((s2, x) => s2 + x.amount, 0);
             if (checkSum > totalCash + 0.0001) {
                 rounded[target.idx].amount -= step;
