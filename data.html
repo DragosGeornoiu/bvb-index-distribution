@@ -256,16 +256,38 @@
         const today = utcMidnightNow();
         const daysSinceLast = daysBetweenUTC(last, today);
 
-        if (missing.length > 0) {
-            coverageStatusEl.textContent = "Missing past days detected";
+        const missingLast7 = missingInLastNDaysUTC(missing, 7);
+
+        // Only mention missing if it's within the last 7 days
+        if (missingLast7 > 0) {
+            coverageStatusEl.textContent =
+                `Missing in past 7 days: ${missingLast7} day${missingLast7 === 1 ? "" : "s"}`;
             coverageStatusEl.style.color = "#d73a49";
-        } else if (daysSinceLast > 1) {
+            return;
+        }
+
+        // Otherwise, ignore older gaps completely
+        if (daysSinceLast > 1) {
             coverageStatusEl.textContent = "Index data not updated recently";
             coverageStatusEl.style.color = "#d29922";
-        } else {
-            coverageStatusEl.textContent = "All expected days are covered";
-            coverageStatusEl.style.color = "#2ea043";
+            return;
         }
+
+        coverageStatusEl.textContent = "All expected days are covered";
+        coverageStatusEl.style.color = "#2ea043";
+    }
+
+    function missingInLastNDaysUTC(missingDates, nDays) {
+        const today = utcMidnightNow();               // UTC midnight today
+        const windowStart = addDaysUTC(today, -nDays); // last N days (excluding today)
+
+        let count = 0;
+        for (const s of missingDates) {
+            const d = parseISODateUTC(s);
+            // count missing dates in [today - nDays, today)
+            if (d >= windowStart && d < today) count++;
+        }
+        return count;
     }
 
     function renderCalendar(dates) {
