@@ -1,3 +1,4 @@
+<!-- data.html (FULL FILE) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +16,102 @@
             }
         })();
     </script>
+
+    <style>
+        /* Page-specific UX polish for coverage lists */
+        .coverage-two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            align-items: start;
+        }
+        @media (max-width: 900px) { .coverage-two-col { grid-template-columns: 1fr; } }
+
+        .mini-kpis {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 900px) { .mini-kpis { grid-template-columns: 1fr; } }
+
+        .mini-kpi {
+            background: rgba(0,0,0,.03);
+            border: 1px solid rgba(0,0,0,.10);
+            border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .mini-kpi .k { font-size: 12px; color: #666; }
+        .mini-kpi .v { margin-top: 4px; font-size: 16px; font-weight: 800; color: #222; }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .pill-ok { background: rgba(46,160,67,.12); color: #2ea043; border-color: rgba(46,160,67,.25); }
+        .pill-warn { background: rgba(210,153,34,.14); color: #b7791f; border-color: rgba(210,153,34,.25); }
+        .pill-bad { background: rgba(215,58,73,.12); color: #d73a49; border-color: rgba(215,58,73,.25); }
+
+        .date-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 8px;
+        }
+        @media (max-width: 1000px) { .date-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+        @media (max-width: 600px) { .date-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+        .date-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,0,0,.10);
+            background: #fff;
+            font-size: 12px;
+            color: #222;
+            font-weight: 700;
+            text-decoration: none;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .date-chip:hover { background: rgba(108,99,255,.08); border-color: rgba(108,99,255,.25); }
+        .date-chip.missing { background: rgba(215,58,73,.08); border-color: rgba(215,58,73,.25); color: #b42318; }
+        .date-chip.muted { background: rgba(0,0,0,.03); border-color: rgba(0,0,0,.08); color: #666; cursor: default; }
+
+        /* A small empty-state block that aligns with grids */
+        .empty-state {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid rgba(46,160,67,.25);
+            background: rgba(46,160,67,.10);
+            color: #1c7c3d;
+            font-weight: 800;
+            font-size: 12px;
+            width: fit-content;
+        }
+
+        .history-link {
+            margin-top: 12px;
+        }
+        .history-link a {
+            color: #6c63ff;
+            text-decoration: none;
+            font-weight: 700;
+        }
+        .history-link a:hover { text-decoration: underline; }
+    </style>
 </head>
 <body>
 
@@ -35,7 +132,7 @@
 
     <div class="card">
         <p class="muted">
-            This page lists all daily BET snapshot files (<code>bvb-companies-YYYY-MM-DD.csv</code>) and highlights missing days.
+            This page lists BET snapshot files (<code>bvb-companies-YYYY-MM-DD.csv</code>) and highlights missing days.
             It reads the repository folder: <code>input/bvb_distribution</code>.
         </p>
         <div class="muted">Status: <span id="status">Loading…</span></div>
@@ -110,7 +207,7 @@
         </div>
     </div>
 
-    <!-- Summary -->
+    <!-- Summary (full history KPIs) -->
     <div class="card">
         <h3 style="margin-top:0;">Summary</h3>
         <div class="summary-grid">
@@ -121,16 +218,56 @@
         </div>
     </div>
 
-    <!-- Missing days -->
+    <!-- Last 30 days focus -->
     <div class="card">
-        <h3 style="margin-top:0;">Missing days</h3>
-        <div id="missingDays" class="muted">—</div>
-    </div>
+        <h3 style="margin-top:0;">Last 30 days</h3>
 
-    <!-- Files -->
-    <div class="card">
-        <h3 style="margin-top:0;">All snapshots</h3>
-        <div id="fileList" class="file-list muted">—</div>
+        <div class="mini-kpis">
+            <div class="mini-kpi">
+                <div class="k">Snapshots present</div>
+                <div class="v" id="kpi30Present">—</div>
+            </div>
+            <div class="mini-kpi">
+                <div class="k">Missing days</div>
+                <div class="v" id="kpi30Missing">—</div>
+            </div>
+            <div class="mini-kpi">
+                <div class="k">Coverage</div>
+                <div class="v" id="kpi30Coverage">—</div>
+            </div>
+        </div>
+
+        <div style="height:12px;"></div>
+
+        <div class="coverage-two-col">
+            <div class="card" style="margin:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <h3 style="margin:0;">Missing days (last 30)</h3>
+                    <span id="badgeMissing30" class="pill-badge" style="display:none;"></span>
+                </div>
+
+                <div style="height:10px;"></div>
+                <div id="missingDays30" class="muted">—</div>
+            </div>
+
+            <div class="card" style="margin:0;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+                    <h3 style="margin:0;">Snapshots (last 30)</h3>
+                    <span id="badgeSnaps30" class="pill-badge" style="display:none;"></span>
+                </div>
+
+                <div style="height:10px;"></div>
+                <div id="snapshots30" class="muted">—</div>
+            </div>
+        </div>
+
+        <div class="history-link muted">
+            Full history:
+            <a href="https://github.com/DragosGeornoiu/bvb-index-distribution/tree/master/input/bvb_distribution"
+               target="_blank" rel="noopener noreferrer">
+                input/bvb_distribution (GitHub)
+            </a>
+        </div>
     </div>
 </div>
 
@@ -142,8 +279,6 @@
 
     const statusEl = document.getElementById("status");
     const calendarEl = document.getElementById("calendar");
-    const fileListEl = document.getElementById("fileList");
-    const missingDaysEl = document.getElementById("missingDays");
 
     const firstDateEl = document.getElementById("firstDate");
     const lastDateEl = document.getElementById("lastDate");
@@ -162,47 +297,47 @@
     const tvFeesDownloadEl = document.getElementById("tvFeesDownload");
     const tvFeesPreviewEl = document.getElementById("tvFeesPreview");
 
+    // Last 30 days elements
+    const kpi30PresentEl = document.getElementById("kpi30Present");
+    const kpi30MissingEl = document.getElementById("kpi30Missing");
+    const kpi30CoverageEl = document.getElementById("kpi30Coverage");
+    const missingDays30El = document.getElementById("missingDays30");
+    const snapshots30El = document.getElementById("snapshots30");
+    const badgeMissing30El = document.getElementById("badgeMissing30");
+    const badgeSnaps30El = document.getElementById("badgeSnaps30");
+
     // --------- UTC-safe date helpers (avoid timezone shifting) ---------
     function pad2(n) { return String(n).padStart(2, "0"); }
-
     function isoDateUTC(d) {
         return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
     }
-
     function parseISODateUTC(s) {
         const [y, m, d] = s.split("-").map(Number);
         return new Date(Date.UTC(y, m - 1, d));
     }
-
     function addDaysUTC(d, n) {
         const x = new Date(d);
         x.setUTCDate(x.getUTCDate() + n);
         return x;
     }
-
     function utcMidnightNow() {
         const now = new Date();
         return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     }
-
     function startOfWeekMondayUTC(d) {
         const x = new Date(d);
         const day = (x.getUTCDay() + 6) % 7; // Mon=0
         return addDaysUTC(x, -day);
     }
-
     function firstOfMonthUTC(d) {
         return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
     }
-
     function endOfMonthUTC(d) {
         return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
     }
-
     function monthShortName(m) {
         return ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m];
     }
-
     function daysBetweenUTC(a, b) {
         const ms = 24 * 60 * 60 * 1000;
         return Math.floor((b - a) / ms);
@@ -211,7 +346,7 @@
 
     async function loadFolderListing() {
         const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${FOLDER_PATH}`;
-        const resp = await fetch(url);
+        const resp = await fetch(url, { cache: "no-store" });
         if (!resp.ok) throw new Error(`GitHub API error: ${resp.status}`);
         return await resp.json();
     }
@@ -232,7 +367,6 @@
 
     function computeMissing(dates) {
         if (dates.length === 0) return [];
-
         const present = new Set(dates);
         const first = parseISODateUTC(dates[0]);
         const today = utcMidnightNow();
@@ -258,7 +392,6 @@
 
         const missingLast7 = missingInLastNDaysUTC(missing, 7);
 
-        // Only mention missing if it's within the last 7 days
         if (missingLast7 > 0) {
             coverageStatusEl.textContent =
                 `Missing in past 7 days: ${missingLast7} day${missingLast7 === 1 ? "" : "s"}`;
@@ -266,7 +399,6 @@
             return;
         }
 
-        // Otherwise, ignore older gaps completely
         if (daysSinceLast > 1) {
             coverageStatusEl.textContent = "Index data not updated recently";
             coverageStatusEl.style.color = "#d29922";
@@ -278,13 +410,11 @@
     }
 
     function missingInLastNDaysUTC(missingDates, nDays) {
-        const today = utcMidnightNow();               // UTC midnight today
-        const windowStart = addDaysUTC(today, -nDays); // last N days (excluding today)
-
+        const today = utcMidnightNow();
+        const windowStart = addDaysUTC(today, -nDays);
         let count = 0;
         for (const s of missingDates) {
             const d = parseISODateUTC(s);
-            // count missing dates in [today - nDays, today)
             if (d >= windowStart && d < today) count++;
         }
         return count;
@@ -346,20 +476,71 @@
         calendarEl.appendChild(grid);
     }
 
-    function renderFileList(dates, fileByDate) {
-        fileListEl.innerHTML = dates.slice().reverse().map(d =>
-            `<div>• <a href="${fileByDate.get(d)}" target="_blank" rel="noopener noreferrer">${d}</a></div>`
-        ).join("");
+    // ---- NEW: Last 30 days rendering in compact grid ----
+    function sliceLastNDaysWindowUTC(nDays) {
+        const today = utcMidnightNow();
+        const start = addDaysUTC(today, -(nDays - 1)); // include today-29 .. today
+        return { start, endExclusive: addDaysUTC(today, 1) };
     }
 
-    function renderMissing(missing) {
-        if (!missing.length) {
-            missingDaysEl.innerHTML = `<span style="color:#2ea043;font-weight:600;">No missing days detected ✅</span>`;
+    function filterDatesInWindow(dates, startUTC, endUTCExclusive) {
+        return dates.filter(ds => {
+            const d = parseISODateUTC(ds);
+            return d >= startUTC && d < endUTCExclusive;
+        });
+    }
+
+    function computeMissingInWindow(datesPresentSet, startUTC, endUTCExclusive) {
+        const today = utcMidnightNow();
+        const missing = [];
+        for (let d = new Date(startUTC); d < endUTCExclusive; d = addDaysUTC(d, 1)) {
+            if (d >= today) continue; // only past days
+            const key = isoDateUTC(d);
+            if (!datesPresentSet.has(key)) missing.push(key);
+        }
+        return missing;
+    }
+
+    function setPill(el, type, text) {
+        el.style.display = "inline-flex";
+        el.className = `pill-badge ${type}`;
+        el.textContent = text;
+    }
+
+    function renderDateGrid(containerEl, items, options) {
+        const { type, fileByDate } = options || {};
+
+        if (!items || items.length === 0) {
+            // aligned empty state inside the box body
+            containerEl.innerHTML = `<div class="empty-state">✅ No missing days in last 30</div>`;
             return;
         }
-        missingDaysEl.innerHTML = missing.map(d => `<div>${d}</div>`).join("");
+
+        const grid = document.createElement("div");
+        grid.className = "date-grid";
+
+        for (const d of items) {
+            if (type === "snapshots") {
+                const a = document.createElement("a");
+                a.className = "date-chip";
+                a.href = fileByDate.get(d) || "#";
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.textContent = d;
+                grid.appendChild(a);
+            } else if (type === "missing") {
+                const sp = document.createElement("span");
+                sp.className = "date-chip missing";
+                sp.textContent = d;
+                grid.appendChild(sp);
+            }
+        }
+
+        containerEl.innerHTML = "";
+        containerEl.appendChild(grid);
     }
 
+    // ---- Meta JSON (unchanged) ----
     async function loadMetaJson(path) {
         const resp = await fetch(path, { cache: "no-store" });
         if (!resp.ok) throw new Error(`Failed to load ${path}: ${resp.status}`);
@@ -381,26 +562,26 @@
             const intra = `${t.intraday_fee_percent.toFixed(2)}% + €${t.intraday_fixed_fee_eur.toFixed(2)}`;
 
             return `<tr>
-                <td style="font-weight:600;">${t.name}</td>
-                <td>${thr}</td>
-                <td>${main}</td>
-                <td>${intra}</td>
-            </tr>`;
+        <td style="font-weight:600;">${t.name}</td>
+        <td>${thr}</td>
+        <td>${main}</td>
+        <td>${intra}</td>
+      </tr>`;
         }).join("");
 
         tvFeesPreviewEl.innerHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>Tier</th>
-                        <th>Threshold</th>
-                        <th>BVB fee</th>
-                        <th>Intra-day fee</th>
-                    </tr>
-                </thead>
-                <tbody>${rows}</tbody>
-            </table>
-        `;
+      <table>
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Threshold</th>
+            <th>BVB fee</th>
+            <th>Intra-day fee</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
     }
 
     async function initMeta() {
@@ -438,20 +619,56 @@
             const files = await loadFolderListing();
             const { dates, fileByDate } = extractDates(files);
 
-            const missing = computeMissing(dates);
+            const missingAll = computeMissing(dates);
 
             statusEl.textContent = "Loaded ✅";
 
+            // Full history KPIs
             firstDateEl.textContent = dates[0] || "—";
             lastDateEl.textContent = dates[dates.length - 1] || "—";
             presentCountEl.textContent = dates.length;
-            missingCountEl.textContent = missing.length;
+            missingCountEl.textContent = missingAll.length;
 
+            // Status + calendar
             statusLastDateEl.textContent = dates[dates.length - 1] || "—";
-            renderCoverageStatus(dates, missing);
+            renderCoverageStatus(dates, missingAll);
             renderCalendar(dates);
-            renderMissing(missing);
-            renderFileList(dates, fileByDate);
+
+            // Last 30 days
+            const { start, endExclusive } = sliceLastNDaysWindowUTC(30);
+            const presentSet = new Set(dates);
+
+            const dates30 = filterDatesInWindow(dates, start, endExclusive).slice().sort().reverse();
+            const missing30 = computeMissingInWindow(presentSet, start, endExclusive);
+
+            // KPIs last 30
+            kpi30PresentEl.textContent = String(dates30.length);
+            kpi30MissingEl.textContent = String(missing30.length);
+
+            const today = utcMidnightNow();
+            const expectedDays = Math.max(0, daysBetweenUTC(start, today)); // past days in window
+            const coveragePct = expectedDays > 0 ? ((expectedDays - missing30.length) / expectedDays) * 100 : 100;
+            kpi30CoverageEl.textContent = `${coveragePct.toFixed(0)}%`;
+
+            // Top-right badges only (no duplicate badge inside body)
+            if (missing30.length === 0) setPill(badgeMissing30El, "pill-ok", "✅ No missing days");
+            else setPill(badgeMissing30El, "pill-bad", `Missing: ${missing30.length}`);
+
+            setPill(badgeSnaps30El, "pill-ok", `Present: ${dates30.length}`);
+
+            // Body content: missing grid OR aligned empty-state
+            if (missing30.length === 0) {
+                missingDays30El.innerHTML = `<div class="empty-state">✅ No missing days in last 30</div>`;
+            } else {
+                renderDateGrid(missingDays30El, missing30.slice().reverse(), { type: "missing" });
+            }
+
+            if (dates30.length === 0) {
+                snapshots30El.innerHTML = `<span class="pill-badge pill-warn">No snapshots in last 30 days</span>`;
+            } else {
+                renderDateGrid(snapshots30El, dates30, { type: "snapshots", fileByDate });
+            }
+
         } catch (e) {
             console.error(e);
             statusEl.textContent = "Failed ❌";

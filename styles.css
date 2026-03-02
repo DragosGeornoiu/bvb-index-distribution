@@ -412,3 +412,37 @@ th {
     color: #1c7c3d;
     font-weight: 700;
 }
+
+/* -----------------------------
+   Sortable tables (global)
+   ----------------------------- */
+th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 22px; /* room for arrow */
+}
+
+th.sortable:hover {
+    filter: brightness(0.95);
+}
+
+th.sortable::after {
+    content: "↕";
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.75;
+    font-size: 12px;
+}
+
+th.sortable.sort-asc::after {
+    content: "↑";
+    opacity: 1;
+}
+
+th.sortable.sort-desc::after {
+    content: "↓";
+    opacity: 1;
+}

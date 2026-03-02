@@ -707,8 +707,16 @@
                     }
                 },
                 scales: {
-                    y: { title: { display: true, text: "Weight (%)" }, ticks: { callback: (v) => `${Number(v).toFixed(0)}%` } },
-                    x: { title: { display: true, text: "Date" } }
+                    y: {
+                        title: { display: true, text: "Weight (%)" },
+                        ticks: {
+                            stepSize: 0.25,
+                            callback: (v) => `${Number(v).toFixed(2)}%`
+                        }
+                    },
+                    x: {
+                        title: { display: true, text: "Date" }
+                    }
                 }
             }
         });
