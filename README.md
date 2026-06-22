@@ -44,6 +44,7 @@ Calendar overview of available daily snapshots and static metadata snapshots.
 - Hosting: GitHub Pages (static site)
 - Automation: GitHub Actions
 - Scraper: Python (`scripts/scrape_bvb.py`)
+- Tests: Node.js built-in test runner (`node:test`)
 
 ### Architecture: static and reproducible
 
@@ -52,6 +53,7 @@ The application has no backend:
 - All data is stored as static files in the repository.
 - A GitHub Action runs daily, scrapes BET weights, and commits a new snapshot.
 - The UI reads committed data only, making results deterministic and reproducible.
+- Calculation logic is tested directly from the JavaScript embedded in `index.html`.
 
 ---
 
@@ -263,6 +265,104 @@ The result is validated in the “Portfolio after applying sell suggestions” t
 ### Important limitation
 
 The output is a planning suggestion. Actual fills, market prices, fees and order execution can differ from the static inputs used by the tool. Always verify prices, quantities and broker fees before placing orders.
+
+---
+
+## TESTING
+
+The project includes automated calculation tests in:
+
+```text
+tests/portfolio-calculations.test.js
+```
+
+The tests use Node.js’ built-in test runner and load the calculation functions directly from `index.html`. This keeps the tests aligned with the code actually deployed to GitHub Pages.
+
+### Run tests locally
+
+Requirements:
+
+- Node.js 22 or later
+- npm
+
+Install dependencies:
+
+```bash
+npm ci
+```
+
+Run the full test suite:
+
+```bash
+npm test
+```
+
+The current suite contains 19 tests covering:
+
+- CSV parsing, including supported delimiters and market-price header aliases
+- invalid CSV input and missing market prices
+- TradeVille copy/paste parsing
+- duplicate-symbol handling
+- stock-only portfolio totals and cash handling
+- BET weight normalization
+- EUR/RON conversion for sell targets
+- TradeVille fee-tier selection and fee calculations
+- buy suggestions, whole-share constraints, minimum investment and available-cash limits
+- sell suggestions, existing cash handling, fees, target overage and impossible targets
+- post-buy and post-sell portfolio simulation models
+- fallback behavior when fee metadata is unavailable
+
+---
+
+## CONTINUOUS INTEGRATION
+
+Tests run automatically through GitHub Actions using:
+
+```text
+.github/workflows/tests.yml
+```
+
+The workflow runs on:
+
+- every push to `master`
+- every pull request targeting `master`
+
+It performs the following steps:
+
+1. checks out the repository
+2. installs Node.js 22
+3. runs `npm ci`
+4. runs `npm test`
+
+If a test fails, the GitHub Actions workflow fails and GitHub sends the repository notification email configured for the account.
+
+The test workflow does not block the GitHub Pages deployment by itself. It acts as an automated validation signal after each push.
+
+---
+
+## DAILY BET SCRAPING
+
+The daily BET scraper workflow is separate from the test workflow:
+
+```text
+.github/workflows/daily_bvb_scrape.yml
+```
+
+It runs on a daily schedule and can also be triggered manually.
+
+The workflow:
+
+1. downloads the BET index composition from BVB
+2. parses constituent weights
+3. writes a dated CSV snapshot
+4. updates `bvb-companies-latest.csv`
+5. commits and pushes changes only when the data changed
+
+The scraper uses:
+
+```text
+scripts/scrape_bvb.py
+```
 
 ---
 
