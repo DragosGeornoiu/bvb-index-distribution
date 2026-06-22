@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>BVB Portfolio Tracker</title>
-    <link rel="stylesheet" href="styles.css?v=2025-12-23-1" />
+    <link rel="stylesheet" href="styles.css?v=2026-06-22-7" />
     <script>
         (function () {
-            const V = "2025-12-23-1";
+            const V = "2026-06-22-7";
             const url = new URL(window.location.href);
             if (!url.searchParams.has("v")) {
                 url.searchParams.set("v", V);
@@ -58,6 +58,7 @@
         .yn-switch button+button{border-left:1px solid rgba(108,99,255,.25)}
         .yn-switch button.active{background:#6c63ff;color:#fff}
         .yn-hidden-checkbox{position:absolute;opacity:0;pointer-events:none}
+        .mode-help{width:100%; margin-top:6px;}
         .yn-row{margin-top:10px}
 
         .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -85,10 +86,10 @@
     <div class="top-nav-inner">
         <div class="top-nav-title">BVB Index Distribution</div>
         <div class="top-nav-tabs">
-            <a class="top-nav-tab active" href="index.html?v=2025-12-23-1">Tracker</a>
-            <a class="top-nav-tab" href="about.html?v=2025-12-23-1">About</a>
-            <a class="top-nav-tab" href="data.html?v=2025-12-23-1">Data Coverage</a>
-            <a class="top-nav-tab" href="allocation.html?v=2025-12-23-1">Allocation History</a>
+            <a class="top-nav-tab active" href="index.html?v=2026-06-22-7">Tracker</a>
+            <a class="top-nav-tab" href="about.html?v=2026-06-22-7">About</a>
+            <a class="top-nav-tab" href="data.html?v=2026-06-22-7">Data Coverage</a>
+            <a class="top-nav-tab" href="allocation.html?v=2026-06-22-7">Allocation History</a>
         </div>
     </div>
 </div>
@@ -218,31 +219,66 @@
     </div>
 
     <div class="section yn yn-row">
-        <span class="yn-label">Enable New Investment</span>
+        <span class="yn-label">Enable Orders</span>
         <input type="checkbox" id="newInvestmentToggle" class="yn-hidden-checkbox" />
-        <div class="yn-switch" role="group" aria-label="Enable New Investment">
+        <div class="yn-switch" role="group" aria-label="Enable Orders">
             <button type="button" id="investYes">Yes</button>
             <button type="button" id="investNo" class="active">No</button>
         </div>
         <div class="muted" style="width:100%; margin-top:6px;">
-            If enabled, the tool suggests buy-only allocations using CASH_VALUE as the available cash.
+            If enabled, choose whether the tool should suggest buy orders from available cash or sell orders to raise cash.
         </div>
     </div>
 
     <div id="investmentFields" style="display:none;" class="section">
         <div class="input-group">
-            <label for="newInvestmentAmount">New Investment Amount (auto from CASH_VALUE)</label>
-            <input type="number" id="newInvestmentAmount" placeholder="Enter new investment amount" />
+            <label>Order mode</label>
+            <div class="segmented" id="orderModeSegmented">
+                <input type="radio" name="orderMode" id="orderModeBuy" value="buy" checked />
+                <label for="orderModeBuy" id="orderBuyLabel" class="active">Buy</label>
+
+                <input type="radio" name="orderMode" id="orderModeSell" value="sell" />
+                <label for="orderModeSell" id="orderSellLabel">Sell</label>
+            </div>
+            <div class="muted mode-help" id="orderModeHelp">
+                Buy mode uses CASH_VALUE as available cash and suggests whole-share buy orders.
+            </div>
         </div>
 
-        <div class="input-group">
-            <label for="minInvestmentAmount">Minimum Investment per Stock</label>
-            <input type="number" id="minInvestmentAmount" placeholder="Enter minimum investment per stock" value="500" />
+        <div id="buyFields">
+            <div class="input-group">
+                <label for="newInvestmentAmount">New Investment Amount (auto from CASH_VALUE)</label>
+                <input type="number" id="newInvestmentAmount" placeholder="Enter new investment amount" />
+            </div>
+
+            <div class="input-group">
+                <label for="minInvestmentAmount">Minimum Investment per Stock</label>
+                <input type="number" id="minInvestmentAmount" placeholder="Enter minimum investment per stock" value="500" />
+            </div>
+
+            <div class="muted">
+                Buy suggestions are constrained by available cash, market prices, whole shares and estimated fees.
+            </div>
         </div>
 
-        <div class="muted">
-            Suggestions are computed buy-only (no selling). Market prices are used for better practicality.
+        <div id="sellFields" style="display:none;">
+            <div class="input-group">
+                <label for="targetCashAmount">Cash I Want Available after Sale</label>
+                <div style="display:flex; gap:8px; align-items:stretch;">
+                    <input type="number" id="targetCashAmount" placeholder="Example: 33000" step="0.01" min="0" style="flex:1;" />
+                    <select id="targetCashCurrency" style="width:110px; padding:10px; border:1px solid #ccc; border-radius:5px; background:#fff;">
+                        <option value="EUR" selected>EUR</option>
+                        <option value="RON">RON</option>
+                    </select>
+                </div>
+                <div id="targetCashConversionHint" class="muted" style="margin-top:6px;"></div>
+            </div>
+
+            <div class="muted">
+                Sell mode treats this as the desired final cash balance after selling. Existing CASH_VALUE is counted first, then the tool sells only the missing net amount. Because orders use whole shares, the tool may sell a little more than strictly needed if that keeps the portfolio closer to BET. The calculation is done internally in RON.
+            </div>
         </div>
+
         <div class="spacer-16"></div>
     </div>
 
@@ -304,6 +340,9 @@
     const tradevilleParseStatusEl = document.getElementById("tradevilleParseStatus");
     const totalInvestmentEl = document.getElementById("totalInvestment");
     const newInvestmentAmountEl = document.getElementById("newInvestmentAmount");
+    const targetCashAmountEl = document.getElementById("targetCashAmount");
+    const targetCashCurrencyEl = document.getElementById("targetCashCurrency");
+    const targetCashConversionHintEl = document.getElementById("targetCashConversionHint");
 
     const importPreviewBlockEl = document.getElementById("importPreviewBlock");
     const importPreviewTableEl = document.getElementById("importPreviewTable");
@@ -556,6 +595,90 @@
     newInvToggleEl.addEventListener("change", syncInvestmentButtons);
     syncInvestmentButtons();
 
+    const orderModeBuyEl = document.getElementById("orderModeBuy");
+    const orderModeSellEl = document.getElementById("orderModeSell");
+    const orderBuyLabelEl = document.getElementById("orderBuyLabel");
+    const orderSellLabelEl = document.getElementById("orderSellLabel");
+    const buyFieldsEl = document.getElementById("buyFields");
+    const sellFieldsEl = document.getElementById("sellFields");
+    const orderModeHelpEl = document.getElementById("orderModeHelp");
+
+    function getOrderMode() {
+        return orderModeSellEl.checked ? "sell" : "buy";
+    }
+
+    function syncOrderMode() {
+        const isSell = getOrderMode() === "sell";
+        orderBuyLabelEl.classList.toggle("active", !isSell);
+        orderSellLabelEl.classList.toggle("active", isSell);
+        buyFieldsEl.style.display = isSell ? "none" : "block";
+        sellFieldsEl.style.display = isSell ? "block" : "none";
+        orderModeHelpEl.textContent = isSell
+            ? "Sell mode calculates whole-share sell orders to raise the amount you want, while keeping the remaining portfolio as close as possible to BET."
+            : "Buy mode uses CASH_VALUE as available cash and suggests whole-share buy orders.";
+    }
+
+    orderModeBuyEl.addEventListener("change", syncOrderMode);
+    orderModeSellEl.addEventListener("change", syncOrderMode);
+    syncOrderMode();
+
+    function convertTargetCashToRon(amount, currency) {
+        const n = Number(amount);
+        if (!Number.isFinite(n) || n < 0) throw new Error("Please enter a valid desired cash amount.");
+
+        if (currency === "EUR") {
+            const eurRon = Number(metaEurRon?.eur_ron);
+            if (!Number.isFinite(eurRon) || eurRon <= 0) {
+                throw new Error("EUR/RON rate is not available, so the desired cash amount cannot be converted to RON.");
+            }
+            return n * eurRon;
+        }
+
+        return n;
+    }
+
+    function targetCashDisplay(targetCashInput, targetCashCurrency, targetCashAmountRon) {
+        const input = Number(targetCashInput);
+        if (!Number.isFinite(input)) return `${targetCashAmountRon.toFixed(2)} RON`;
+
+        if (targetCashCurrency === "EUR") {
+            const eurRon = Number(metaEurRon?.eur_ron);
+            if (Number.isFinite(eurRon) && eurRon > 0) {
+                return `${input.toFixed(2)} EUR × ${eurRon.toFixed(4)} = ${targetCashAmountRon.toFixed(2)} RON`;
+            }
+            return `${input.toFixed(2)} EUR = ${targetCashAmountRon.toFixed(2)} RON`;
+        }
+
+        return `${input.toFixed(2)} RON`;
+    }
+
+    function updateTargetCashConversionHint() {
+        if (!targetCashConversionHintEl || !targetCashAmountEl || !targetCashCurrencyEl) return;
+        const amount = Number(targetCashAmountEl.value);
+        const currency = targetCashCurrencyEl.value;
+
+        if (!Number.isFinite(amount) || amount < 0) {
+            targetCashConversionHintEl.textContent = "";
+            return;
+        }
+
+        if (currency === "EUR") {
+            const eurRon = Number(metaEurRon?.eur_ron);
+            if (Number.isFinite(eurRon) && eurRon > 0) {
+                const ron = amount * eurRon;
+                targetCashConversionHintEl.textContent = `${amount.toFixed(2)} EUR × ${eurRon.toFixed(4)} = ${ron.toFixed(2)} RON requested from sale.`;
+            } else {
+                targetCashConversionHintEl.textContent = "EUR amount will be converted using input/meta/eur_ron.json when you generate the report.";
+            }
+        } else {
+            targetCashConversionHintEl.textContent = `${amount.toFixed(2)} RON desired final cash.`;
+        }
+    }
+
+    targetCashAmountEl.addEventListener("input", updateTargetCashConversionHint);
+    targetCashCurrencyEl.addEventListener("change", updateTargetCashConversionHint);
+    updateTargetCashConversionHint();
+
     document.getElementById("portfolioFile").addEventListener("change", function () {
         const file = this.files[0];
         document.getElementById("portfolioFileName").textContent = file ? file.name : "No file chosen";
@@ -567,6 +690,7 @@
 
         totalInvestmentEl.value = "";
         newInvestmentAmountEl.value = "";
+        targetCashAmountEl.value = "";
         hideImportPreview();
         hideFeeTierSection();
 
@@ -620,6 +744,7 @@
 
         totalInvestmentEl.value = "";
         newInvestmentAmountEl.value = "";
+        targetCashAmountEl.value = "";
         hideImportPreview();
         hideFeeTierSection();
 
@@ -670,16 +795,25 @@
             return;
         }
 
-        const newInvestmentEnabled = document.getElementById("newInvestmentToggle").checked;
-        const newInvestment = newInvestmentEnabled ? Number(document.getElementById("newInvestmentAmount").value) : 0;
-        const minInvestmentAmount = newInvestmentEnabled ? Number(document.getElementById("minInvestmentAmount").value) : 0;
+        const ordersEnabled = document.getElementById("newInvestmentToggle").checked;
+        const orderMode = ordersEnabled ? getOrderMode() : "none";
+        const newInvestment = (ordersEnabled && orderMode === "buy") ? Number(document.getElementById("newInvestmentAmount").value) : 0;
+        const minInvestmentAmount = (ordersEnabled && orderMode === "buy") ? Number(document.getElementById("minInvestmentAmount").value) : 0;
+        const targetCashInput = (ordersEnabled && orderMode === "sell") ? Number(document.getElementById("targetCashAmount").value) : 0;
+        const targetCashCurrency = (ordersEnabled && orderMode === "sell") ? String(document.getElementById("targetCashCurrency").value || "RON") : "RON";
+        let targetCashAmount = 0;
 
-        if (newInvestmentEnabled && (!Number.isFinite(newInvestment) || newInvestment <= 0)) {
+        if (ordersEnabled && orderMode === "buy" && (!Number.isFinite(newInvestment) || newInvestment <= 0)) {
             alert("Please enter a valid New Investment Amount.");
             return;
         }
-        if (newInvestmentEnabled && (!Number.isFinite(minInvestmentAmount) || minInvestmentAmount < 0)) {
+        if (ordersEnabled && orderMode === "buy" && (!Number.isFinite(minInvestmentAmount) || minInvestmentAmount < 0)) {
             alert("Please enter a valid Minimum Investment per Stock.");
+            return;
+        }
+        if (ordersEnabled && orderMode === "sell" && (!Number.isFinite(targetCashInput) || targetCashInput <= 0)) {
+            alert("Please enter the total cash you want available after the sale (EUR or RON). This field is required in Sell mode.");
+            document.getElementById("targetCashAmount").focus();
             return;
         }
 
@@ -706,6 +840,16 @@
         bvbRowsBadgeEl.style.display = "inline-flex";
 
         await loadFeeMetaIfNeeded();
+        updateTargetCashConversionHint();
+
+        try {
+            targetCashAmount = (ordersEnabled && orderMode === "sell")
+                ? convertTargetCashToRon(targetCashInput, targetCashCurrency)
+                : 0;
+        } catch (e) {
+            alert(e.message);
+            return;
+        }
 
         generateReportAndSuggestions(
             bvbData,
@@ -713,8 +857,13 @@
             parsedPortfolio.totalStocksValue,
             parsedPortfolio.totalAllValue,
             onlyPortfolioCompanies,
-            newInvestmentEnabled ? newInvestment : 0,
-            newInvestmentEnabled ? minInvestmentAmount : 0
+            ordersEnabled ? orderMode : "none",
+            ordersEnabled ? newInvestment : 0,
+            ordersEnabled ? minInvestmentAmount : 0,
+            ordersEnabled ? targetCashAmount : 0,
+            parsedPortfolio.cashValue || 0,
+            ordersEnabled ? targetCashInput : 0,
+            ordersEnabled ? targetCashCurrency : "RON"
         );
 
         // ensure all new tables become sortable
@@ -864,6 +1013,26 @@
 
     function formatMoney(n) {
         return Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function currentEurRonRate() {
+        const eurRon = Number(metaEurRon?.eur_ron);
+        return Number.isFinite(eurRon) && eurRon > 0 ? eurRon : null;
+    }
+
+    function formatRonEur(n) {
+        const value = Number(n);
+        if (!Number.isFinite(value)) return "—";
+        const eurRon = currentEurRonRate();
+        if (!eurRon) return `${formatMoney(value)} RON`;
+        return `${formatMoney(value)} RON / ${formatMoney(value / eurRon)} EUR`;
+    }
+
+    function formatEurOnly(n) {
+        const value = Number(n);
+        const eurRon = currentEurRonRate();
+        if (!Number.isFinite(value) || !eurRon) return "—";
+        return `${formatMoney(value / eurRon)} EUR`;
     }
 
     // ---- Tradeville parsing helpers (as before) ----
@@ -1152,8 +1321,13 @@
         totalStocksValue,
         totalAllValue,
         onlyPortfolioCompanies,
+        orderMode,
         newInvestment,
-        minInvestmentAmount
+        minInvestmentAmount,
+        targetCashAmount,
+        currentCashValue,
+        targetCashInput = targetCashAmount,
+        targetCashCurrency = "RON"
     ) {
         const reportDiv = document.getElementById("report");
         const suggestionsDiv = document.getElementById("investmentSuggestions");
@@ -1193,7 +1367,7 @@
           <td>${c.bvbWeight.toFixed(2)}%</td>
           <td>${c.normalizedWeight.toFixed(2)}%</td>
           <td>${pWeight.toFixed(2)}%</td>
-          <td class="${cls}">${diffValue.toFixed(2)} (${diffPercent.toFixed(2)}%)</td>
+          <td class="${cls}">${formatRonEur(diffValue)} (${diffPercent.toFixed(2)}%)</td>
         </tr>
       `;
         }).join("");
@@ -1218,7 +1392,7 @@
         // make report table sortable
         makeTablesSortable(reportDiv);
 
-        if (!(newInvestment > 0)) return;
+        if (orderMode === "none") return;
 
         const feeInfo = computeFeeInfoForCards(totalAllValue, metaEurRon, metaFees);
 
@@ -1233,36 +1407,35 @@
             }
         }
 
-        const suggestions = computeSuggestionsWithMarketPrices(
-            normalizedBvb,
-            portfolioWithValues,
-            totalStocksValue,
-            newInvestment,
-            minInvestmentAmount,
-            feeInfo
-        );
+        if (orderMode === "buy") {
+            const suggestions = computeSuggestionsWithMarketPrices(
+                normalizedBvb,
+                portfolioWithValues,
+                totalStocksValue,
+                newInvestment,
+                minInvestmentAmount,
+                feeInfo
+            );
 
-        const allocatedTotal = suggestions.investedTotal ?? suggestions.items.reduce((s, it) => s + (it.totalCost ?? it.amount), 0);
-        const allocatedGross = suggestions.investedGross ?? suggestions.items.reduce((s, it) => s + (it.amountGross ?? it.amount), 0);
-        const unallocated = suggestions.unallocated;
+            const allocatedTotal = suggestions.investedTotal ?? suggestions.items.reduce((sum, it) => sum + (it.totalCost ?? it.amount), 0);
+            const allocatedGross = suggestions.investedGross ?? suggestions.items.reduce((sum, it) => sum + (it.amountGross ?? it.amount), 0);
+            const unallocated = suggestions.unallocated;
+            const unallocCls = unallocated < -0.005 ? "neg" : "";
 
-        const unallocCls = unallocated < -0.005 ? "neg" : "";
-
-        const listItems = suggestions.items.map(it => {
-            const detailsLine = buildSuggestionDetailsLine(it, feeInfo);
-            return `
+            const listItems = suggestions.items.map(it => {
+                const detailsLine = buildSuggestionDetailsLine(it, feeInfo);
+                return `
         <li>
           <div class="investment-symbol">${it.symbol}</div>
-          <div class="investment-amount">${(Number.isFinite(it.totalCost) ? it.totalCost : it.amount).toFixed(2)}</div>
+          <div class="investment-amount">BUY ${it.shares} shares</div>
           ${detailsLine ? `<div class="suggestion-details">${detailsLine}</div>` : ``}
         </li>
       `;
-        }).join("");
+            }).join("");
 
-        const feeTierHtml = suggestionsDiv.innerHTML;
-
-        suggestionsDiv.innerHTML = `
-      <h3>Investment Suggestions</h3>
+            const feeTierHtml = suggestionsDiv.innerHTML;
+            suggestionsDiv.innerHTML = `
+      <h3>Buy Suggestions</h3>
       ${feeTierHtml}
       <div class="total-investment">
         Available: ${newInvestment.toFixed(2)}
@@ -1272,22 +1445,448 @@
       <div class="muted" style="margin-top:6px;">
         Allocated includes estimated fees per symbol (variable + fixed). Gross-only invested: ${allocatedGross.toFixed(2)}.
       </div>
-      <ul>${listItems}</ul>
+      <ul>${listItems || `<li><div class="investment-symbol">No practical buy order found</div><div class="suggestion-details">Try lowering the minimum investment or increasing available cash.</div></li>`}</ul>
       <div class="muted" style="margin-top:10px;">
         Notes: Suggestions are constrained by market prices (whole shares). Fees shown are estimates.
       </div>
     `;
 
-        const after = portfolioAfterSuggestions(
-            portfolioWithValues,
-            suggestions.items.map(it => ({ symbol: it.symbol, amount: (it.amountGross ?? it.amount), shares: it.shares, price: it.price })),
-            totalStocksValue
-        );
+            const after = portfolioAfterBuySuggestions(
+                portfolioWithValues,
+                suggestions.items.map(it => ({ symbol: it.symbol, amount: (it.amountGross ?? it.amount), shares: it.shares, price: it.price })),
+                totalStocksValue
+            );
 
-        renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions);
+            renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions, "buy");
+            makeTablesSortable(afterDiv);
+            return;
+        }
 
-        // make after table sortable
-        makeTablesSortable(afterDiv);
+        if (orderMode === "sell") {
+            const suggestions = computeSellSuggestionsWithMarketPrices(
+                normalizedBvb,
+                portfolioWithValues,
+                totalStocksValue,
+                targetCashAmount,
+                currentCashValue,
+                feeInfo
+            );
+
+            const netNeeded = Math.max(0, targetCashAmount - currentCashValue);
+            const netRaised = suggestions.netRaised ?? suggestions.items.reduce((sum, it) => sum + (it.netProceeds ?? 0), 0);
+            const grossSold = suggestions.grossSold ?? suggestions.items.reduce((sum, it) => sum + (it.amountGross ?? 0), 0);
+            const feesTotal = suggestions.feesTotal ?? suggestions.items.reduce((sum, it) => sum + (it.fee ?? 0), 0);
+            const finalCash = currentCashValue + netRaised;
+            const shortfall = Math.max(0, targetCashAmount - finalCash);
+            const shortfallCls = shortfall > 0.005 ? "neg" : "";
+
+            const listItems = suggestions.items.map(it => {
+                const detailsLine = buildSellSuggestionDetailsLine(it, feeInfo);
+                return `
+        <li>
+          <div class="investment-symbol">${it.symbol}</div>
+          <div class="investment-amount">SELL ${it.shares} shares</div>
+          ${detailsLine ? `<div class="suggestion-details">${detailsLine}</div>` : ``}
+        </li>
+      `;
+            }).join("");
+
+            const feeTierHtml = suggestionsDiv.innerHTML;
+            suggestionsDiv.innerHTML = `
+      <h3>Sell Suggestions</h3>
+      ${feeTierHtml}
+      <div class="total-investment" style="text-align:left; line-height:1.65;">
+        <div>Current cash: <b>${formatRonEur(currentCashValue)}</b></div>
+        <div>Desired final cash after sale: <b>${targetCashDisplay(targetCashInput, targetCashCurrency, targetCashAmount)}</b></div>
+        <div>Net needed from sales: <b>${formatRonEur(netNeeded)}</b></div>
+        <div>Estimated final cash: <b>${formatRonEur(finalCash)}</b></div>
+        <div>Shortfall: <span class="${shortfallCls}"><b>${formatRonEur(shortfall)}</b></span></div>
+      </div>
+      ${netRaised > netNeeded + 0.005 ? `<div class="card-like" style="margin-top:10px; border-color:rgba(108,99,255,.35); background:rgba(108,99,255,.06);">
+        <b>Actual sale is higher than strictly needed:</b> desired final cash ${targetCashDisplay(targetCashInput, targetCashCurrency, targetCashAmount)}, net needed from sales ${formatRonEur(netNeeded)}, estimated net raised ${formatRonEur(netRaised)}, extra sold net ${formatRonEur(netRaised - netNeeded)}.
+        Gross sold before fees: <b>${formatRonEur(grossSold)}</b>.
+      </div>` : ``}
+      <div class="muted" style="margin-top:6px;">
+        Net needed from sales: ${formatRonEur(netNeeded)} · Gross sold: ${formatRonEur(grossSold)} · Estimated fees: ${formatRonEur(feesTotal)} · Net raised: ${formatRonEur(netRaised)}.
+      </div>
+      <ul>${listItems || `<li><div class="investment-symbol">No sale needed</div><div class="suggestion-details">Your existing CASH_VALUE already reaches the desired final cash amount.</div></li>`}</ul>
+      <div class="muted" style="margin-top:10px;">
+        Notes: Sell suggestions use whole shares, current market prices from the import, and estimated TradeVille fees. Existing CASH_VALUE is counted first.
+      </div>
+    `;
+
+            const after = portfolioAfterSellSuggestions(
+                portfolioWithValues,
+                suggestions.items.map(it => ({ symbol: it.symbol, amount: (it.amountGross ?? it.amount), shares: it.shares, price: it.price })),
+                totalStocksValue
+            );
+
+            renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, totalStocksValue, suggestions, "sell", finalCash);
+            makeTablesSortable(afterDiv);
+        }
+    }
+
+    function buildSellSuggestionDetailsLine(it, feeInfo) {
+        if (!it || !Number.isFinite(it.shares) || !Number.isFinite(it.price) || it.shares <= 0) return "";
+        const gross = Number.isFinite(it.amountGross) ? it.amountGross : it.shares * it.price;
+        const fee = Number.isFinite(it.fee) ? it.fee : 0;
+        const net = Number.isFinite(it.netProceeds) ? it.netProceeds : gross - fee;
+        if (!feeInfo || !Number.isFinite(feeInfo.eurRon)) {
+            return `${it.shares} shares × ${it.price} ≈ ${formatRonEur(gross)} gross`;
+        }
+        return `${it.shares} shares × ${it.price} - ${formatRonEur(fee)} fees ≈ ${formatRonEur(net)} net`;
+    }
+
+    // Sell enough to reach target cash, while trying to keep the portfolio as close as possible
+    // to the normalized BET weights AFTER the sale.
+    //
+    // Key idea:
+    //   For a final gross sale G, the final stock total is T1 = T0 - G.
+    //   The ideal remaining value for each symbol is targetWeight * T1.
+    //   So the ideal gross amount to sell from a symbol is:
+    //       currentValue - targetWeight * T1
+    //   Then we convert those ideal values to whole-share orders and locally improve the result.
+    function computeSellSuggestionsWithMarketPrices(
+        normalizedBvb,
+        portfolioWithValues,
+        totalStocksValue,
+        targetCashAmount,
+        currentCashValue,
+        feeInfo
+    ) {
+        const netNeeded = Math.max(0, targetCashAmount - currentCashValue);
+        if (netNeeded <= 0.005) {
+            return { items: [], netRaised: 0, grossSold: 0, feesTotal: 0, shortfall: 0 };
+        }
+
+        const currentBySymbol = new Map(portfolioWithValues.map(p => [p.symbol, p]));
+        const targets = normalizedBvb.map(c => ({ symbol: c.symbol, t: c.normalizedWeight / 100 }));
+        const targetBySymbol = new Map(targets.map(x => [x.symbol, x.t]));
+
+        const feePct = (feeInfo && Number.isFinite(feeInfo.feePercent)) ? (feeInfo.feePercent / 100) : 0;
+        const fixedRon =
+            (feeInfo && Number.isFinite(feeInfo.fixedFeeEur) && Number.isFinite(feeInfo.eurRon))
+                ? (feeInfo.fixedFeeEur * feeInfo.eurRon)
+                : 0;
+
+        const universe = [];
+        for (const x of targets) {
+            const p = currentBySymbol.get(x.symbol);
+            if (!p) continue;
+            const price = Number(p.market_price);
+            const value = Number(p.value);
+            if (!Number.isFinite(price) || price <= 0 || !Number.isFinite(value) || value <= 0) continue;
+            const maxShares = Math.max(0, Math.floor(value / price));
+            if (maxShares <= 0) continue;
+            universe.push({
+                symbol: x.symbol,
+                target: x.t,
+                price,
+                baseValue: value,
+                maxShares
+            });
+        }
+
+        if (!universe.length) {
+            return { items: [], netRaised: 0, grossSold: 0, feesTotal: 0, shortfall: netNeeded };
+        }
+
+        function emptyState() {
+            const m = new Map();
+            for (const u of universe) m.set(u.symbol, 0);
+            return m;
+        }
+
+        function cloneState(state) {
+            return new Map(state);
+        }
+
+        function grossForSymbol(u, shares) {
+            return Math.max(0, shares) * u.price;
+        }
+
+        function feeFor(gross, shares) {
+            if (shares <= 0 || gross <= 0) return 0;
+            return gross * feePct + fixedRon;
+        }
+
+        function totals(state) {
+            let grossSold = 0;
+            let feesTotal = 0;
+            let netRaised = 0;
+            let orderCount = 0;
+
+            for (const u of universe) {
+                const shares = state.get(u.symbol) || 0;
+                if (shares <= 0) continue;
+                const gross = grossForSymbol(u, shares);
+                const fee = feeFor(gross, shares);
+                grossSold += gross;
+                feesTotal += fee;
+                netRaised += Math.max(0, gross - fee);
+                orderCount += 1;
+            }
+
+            return { grossSold, feesTotal, netRaised, orderCount };
+        }
+
+        function objective(state) {
+            const t = totals(state);
+            const finalStocksTotal = totalStocksValue - t.grossSold;
+            if (!Number.isFinite(finalStocksTotal) || finalStocksTotal <= 0) return Number.POSITIVE_INFINITY;
+
+            let sumSq = 0;
+            for (const x of targets) {
+                const u = universe.find(uu => uu.symbol === x.symbol);
+                const baseValue = u ? u.baseValue : (currentBySymbol.get(x.symbol)?.value || 0);
+                const shares = u ? (state.get(x.symbol) || 0) : 0;
+                const remainingValue = Math.max(0, baseValue - (u ? grossForSymbol(u, shares) : 0));
+                const weight = remainingValue / finalStocksTotal;
+                const err = weight - x.t;
+                sumSq += err * err;
+            }
+            return sumSq;
+        }
+
+        function score(state, requireTarget) {
+            const t = totals(state);
+            const obj = objective(state);
+            const shortfall = Math.max(0, netNeeded - t.netRaised);
+            const overshoot = Math.max(0, t.netRaised - netNeeded);
+
+            // Huge penalty for not reaching the requested cash target.
+            // Small penalty for overshooting, because whole shares make exact matching impossible.
+            const shortPenalty = (shortfall / Math.max(1, netNeeded)) ** 2 * 1000000;
+            const overPenalty = (overshoot / Math.max(1, netNeeded)) ** 2 * 10;
+            const orderPenalty = t.orderCount * 1e-10;
+
+            if (requireTarget && shortfall > 0.005) return Number.POSITIVE_INFINITY;
+            return obj + shortPenalty + overPenalty + orderPenalty;
+        }
+
+        function clampShares(u, shares) {
+            return Math.max(0, Math.min(u.maxShares, Math.round(shares)));
+        }
+
+        function buildIdealState(grossTarget, roundMode) {
+            const state = emptyState();
+            const finalStocksTotal = Math.max(0, totalStocksValue - grossTarget);
+
+            for (const u of universe) {
+                const desiredGross = u.baseValue - (u.target * finalStocksTotal);
+                const rawShares = desiredGross / u.price;
+                let shares;
+                if (roundMode === "floor") shares = Math.floor(rawShares);
+                else if (roundMode === "ceil") shares = Math.ceil(rawShares);
+                else shares = Math.round(rawShares);
+                state.set(u.symbol, clampShares(u, shares));
+            }
+
+            return state;
+        }
+
+        function addBestShare(state) {
+            let best = null;
+            let bestScore = Number.POSITIVE_INFINITY;
+
+            for (const u of universe) {
+                const currentShares = state.get(u.symbol) || 0;
+                if (currentShares >= u.maxShares) continue;
+
+                const candidate = cloneState(state);
+                candidate.set(u.symbol, currentShares + 1);
+                const sc = score(candidate, false);
+
+                if (sc < bestScore - 1e-15) {
+                    bestScore = sc;
+                    best = candidate;
+                }
+            }
+
+            return best;
+        }
+
+        function removeBestShareIfUseful(state) {
+            const currentScore = score(state, true);
+            let best = null;
+            let bestScore = currentScore;
+
+            for (const u of universe) {
+                const currentShares = state.get(u.symbol) || 0;
+                if (currentShares <= 0) continue;
+
+                const candidate = cloneState(state);
+                candidate.set(u.symbol, currentShares - 1);
+
+                const candidateTotals = totals(candidate);
+                if (candidateTotals.netRaised + 0.005 < netNeeded) continue;
+
+                const sc = score(candidate, true);
+                if (sc < bestScore - 1e-15) {
+                    bestScore = sc;
+                    best = candidate;
+                }
+            }
+
+            return best;
+        }
+
+        function swapBestShareIfUseful(state) {
+            const currentScore = score(state, true);
+            let best = null;
+            let bestScore = currentScore;
+
+            for (const from of universe) {
+                const fromShares = state.get(from.symbol) || 0;
+                if (fromShares <= 0) continue;
+
+                for (const to of universe) {
+                    if (from.symbol === to.symbol) continue;
+                    const toShares = state.get(to.symbol) || 0;
+                    if (toShares >= to.maxShares) continue;
+
+                    const candidate = cloneState(state);
+                    candidate.set(from.symbol, fromShares - 1);
+                    candidate.set(to.symbol, toShares + 1);
+
+                    const candidateTotals = totals(candidate);
+                    if (candidateTotals.netRaised + 0.005 < netNeeded) continue;
+
+                    const sc = score(candidate, true);
+                    if (sc < bestScore - 1e-15) {
+                        bestScore = sc;
+                        best = candidate;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        function improveState(initialState) {
+            let state = cloneState(initialState);
+
+            // First make sure we raise enough net cash.
+            let guard = 0;
+            while (guard++ < 300000 && totals(state).netRaised + 0.005 < netNeeded) {
+                const next = addBestShare(state);
+                if (!next) break;
+                state = next;
+            }
+
+            // Then remove unnecessary overshoot if it improves the final allocation.
+            guard = 0;
+            while (guard++ < 50000) {
+                const next = removeBestShareIfUseful(state);
+                if (!next) break;
+                state = next;
+            }
+
+            // Finally try one-for-one swaps between symbols to improve the final BET closeness.
+            guard = 0;
+            while (guard++ < 5000) {
+                const next = swapBestShareIfUseful(state);
+                if (!next) break;
+                state = next;
+            }
+
+            return state;
+        }
+
+        const candidates = [];
+        const maxPossibleGross = universe.reduce((s, u) => s + (u.maxShares * u.price), 0);
+        const maxPossibleNet = (() => {
+            const all = emptyState();
+            for (const u of universe) all.set(u.symbol, u.maxShares);
+            return totals(all).netRaised;
+        })();
+
+        if (maxPossibleNet + 0.005 < netNeeded) {
+            const all = emptyState();
+            for (const u of universe) all.set(u.symbol, u.maxShares);
+            candidates.push(all);
+        } else {
+            const maxOrders = Math.max(1, universe.length);
+            const baseGrossEstimate = netNeeded / Math.max(0.000001, 1 - feePct);
+
+            for (let assumedOrders = 1; assumedOrders <= maxOrders; assumedOrders++) {
+                const grossEstimate = (netNeeded + assumedOrders * fixedRon) / Math.max(0.000001, 1 - feePct);
+                for (const multiplier of [0.985, 0.995, 1, 1.005, 1.015]) {
+                    const grossTarget = Math.max(0, Math.min(maxPossibleGross, grossEstimate * multiplier));
+                    candidates.push(buildIdealState(grossTarget, "floor"));
+                    candidates.push(buildIdealState(grossTarget, "round"));
+                    candidates.push(buildIdealState(grossTarget, "ceil"));
+                }
+            }
+
+            // Also seed from a pure proportional sale, useful when the requested cash is very large.
+            const proportional = emptyState();
+            const propRatio = Math.max(0, Math.min(1, baseGrossEstimate / Math.max(1, totalStocksValue)));
+            for (const u of universe) proportional.set(u.symbol, clampShares(u, (u.baseValue * propRatio) / u.price));
+            candidates.push(proportional);
+        }
+
+        let bestState = null;
+        let bestScore = Number.POSITIVE_INFINITY;
+        let bestNetOvershoot = Number.POSITIVE_INFINITY;
+
+        for (const c of candidates) {
+            const improved = improveState(c);
+            const t = totals(improved);
+            const sc = score(improved, false);
+            const overshoot = Math.max(0, t.netRaised - netNeeded);
+            const shortfall = Math.max(0, netNeeded - t.netRaised);
+
+            if (
+                sc < bestScore - 1e-15 ||
+                (Math.abs(sc - bestScore) <= 1e-15 && shortfall <= 0.005 && overshoot < bestNetOvershoot)
+            ) {
+                bestScore = sc;
+                bestNetOvershoot = overshoot;
+                bestState = improved;
+            }
+        }
+
+        if (!bestState) bestState = emptyState();
+
+        const items = [];
+        let grossSold = 0;
+        let feesTotal = 0;
+        let netRaised = 0;
+
+        for (const u of universe) {
+            const shares = bestState.get(u.symbol) || 0;
+            if (shares <= 0) continue;
+            const gross = grossForSymbol(u, shares);
+            const fee = feeFor(gross, shares);
+            const netProceeds = Math.max(0, gross - fee);
+            items.push({
+                symbol: u.symbol,
+                shares,
+                price: u.price,
+                amountGross: gross,
+                fee,
+                netProceeds,
+                amount: gross
+            });
+            grossSold += gross;
+            feesTotal += fee;
+            netRaised += netProceeds;
+        }
+
+        items.sort((a, b) => {
+            const aw = targetBySymbol.get(a.symbol) ?? 0;
+            const bw = targetBySymbol.get(b.symbol) ?? 0;
+            return bw - aw;
+        });
+
+        return {
+            items,
+            netRaised,
+            grossSold,
+            feesTotal,
+            shortfall: Math.max(0, netNeeded - netRaised)
+        };
     }
 
     // ✅ Objective-based greedy + sweep-to-spend + fee-aware + min-per-stock respected when opening new symbols
@@ -1539,7 +2138,7 @@
         return { items, unallocated, investedGross: spentGross, investedTotal: spentTotal };
     }
 
-    function portfolioAfterSuggestions(portfolioWithValues, items, totalStocksValue) {
+    function portfolioAfterBuySuggestions(portfolioWithValues, items, totalStocksValue) {
         const map = new Map(portfolioWithValues.map(p => [p.symbol, { ...p }]));
         for (const it of items) {
             const existing = map.get(it.symbol);
@@ -1558,8 +2157,27 @@
         return { list, newTotal, invested };
     }
 
-    function renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, oldTotalStocksValue, suggestions) {
-        const { list, newTotal, invested } = after;
+    function portfolioAfterSellSuggestions(portfolioWithValues, items, totalStocksValue) {
+        const map = new Map(portfolioWithValues.map(p => [p.symbol, { ...p }]));
+        for (const it of items) {
+            const existing = map.get(it.symbol);
+            if (!existing) continue;
+            existing.value = Math.max(0, existing.value - it.amount);
+        }
+        const sold = items.reduce((sum, it) => sum + it.amount, 0);
+        const newTotal = Math.max(0, totalStocksValue - sold);
+
+        const list = Array.from(map.values()).map(p => ({
+            symbol: p.symbol,
+            value: p.value,
+            weight: newTotal > 0 ? (p.value / newTotal) * 100 : 0
+        }));
+
+        return { list, newTotal, invested: -sold, sold };
+    }
+
+    function renderAfterSuggestionsTable(afterDiv, normalizedBvb, after, oldTotalStocksValue, suggestions, mode, finalCash) {
+        const { list, newTotal, invested, sold } = after;
         const newW = new Map(list.map(x => [x.symbol, x.weight]));
 
         const rows = normalizedBvb.map(c => {
@@ -1573,18 +2191,19 @@
           <td>${c.symbol}</td>
           <td>${c.normalizedWeight.toFixed(2)}%</td>
           <td>${wNew.toFixed(2)}%</td>
-          <td class="${cls}">${diffNewVal.toFixed(2)} (${diffNewPct.toFixed(2)}%)</td>
+          <td class="${cls}">${formatRonEur(diffNewVal)} (${diffNewPct.toFixed(2)}%)</td>
         </tr>
       `;
         }).join("");
 
         afterDiv.innerHTML = `
       <div class="spacer-24"></div>
-      <h3>Portfolio after applying suggestions</h3>
+      <h3>Portfolio after applying ${mode === "sell" ? "sell" : "buy"} suggestions</h3>
       <div class="muted" style="margin-bottom:10px;">
-        New stocks total: <b>${newTotal.toFixed(2)}</b> (old: ${oldTotalStocksValue.toFixed(2)}) ·
-        Invested (gross): <b>${invested.toFixed(2)}</b> ·
-        Unallocated: <b>${suggestions.unallocated.toFixed(2)}</b>
+        New stocks total: <b>${formatRonEur(newTotal)}</b> (old: ${formatRonEur(oldTotalStocksValue)}) ·
+        ${mode === "sell"
+            ? `Sold (gross): <b>${formatRonEur(sold || 0)}</b> · Estimated final cash: <b>${formatRonEur(Number(finalCash || 0))}</b>`
+            : `Invested (gross): <b>${formatRonEur(invested)}</b> · Unallocated: <b>${formatRonEur(suggestions.unallocated)}</b>`}
       </div>
       <table>
         <tr>
