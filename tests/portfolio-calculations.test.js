@@ -1,83 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import vm from "node:vm";
-import { fileURLToPath } from "node:url";
+import * as api from "../src/calculations.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const INDEX_HTML = path.resolve(__dirname, "..", "index.html");
 
-function fakeElement() {
-  return {
-    style: {},
-    dataset: {},
-    textContent: "",
-    innerHTML: "",
-    value: "",
-    checked: false,
-    className: "",
-    classList: {
-      add() {},
-      remove() {},
-      toggle() {},
-      contains() { return false; }
-    },
-    addEventListener() {},
-    appendChild() {},
-    querySelectorAll() { return []; }
-  };
-}
-
-function loadTrackerApi() {
-  const html = fs.readFileSync(INDEX_HTML, "utf8");
-  const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/gi)].map(m => m[1]);
-  const mainScript = scripts.find(s => s.includes("const BVB_LATEST_CSV_URL"));
-
-  assert.ok(mainScript, "index.html should contain the main tracker script");
-
-  const elements = new Map();
-  const document = {
-    getElementById(id) {
-      if (!elements.has(id)) elements.set(id, fakeElement());
-      return elements.get(id);
-    },
-    querySelectorAll() { return []; },
-    addEventListener() {}
-  };
-
-  const context = {
-    document,
-    console,
-    alert() {},
-    fetch() { throw new Error("fetch should not be called by unit tests"); },
-    setTimeout,
-    clearTimeout
-  };
-
-  vm.createContext(context);
-  vm.runInContext(`
-    ${mainScript}
-
-    globalThis.__trackerApi = {
-      parseCSV,
-      portfolioValues,
-      parseTradevilleToRows,
-      pickTier,
-      computeFeeInfoForCards,
-      computeSuggestionsWithMarketPrices,
-      computeSellSuggestionsWithMarketPrices,
-      portfolioAfterBuySuggestions,
-      portfolioAfterSellSuggestions
-    };
-  `, context, { filename: "index.html" });
-
-  return context.__trackerApi;
-}
-
-const api = loadTrackerApi();
-
+// Shared fixture: a small BET-like index universe used by buy/sell tests.
 const BET_CSV = `symbol,weight
 TLV,19.52
 SNP,15.20
@@ -91,6 +17,7 @@ SNN,3.60
 M,3.23
 ONE,1.06`;
 
+// Shared fixture: a portfolio with stocks, market prices and cash.
 const PORTFOLIO_CSV = `symbol,value,market_price
 TLV,176844.44,37.16
 SNP,136291.48,1.0380
@@ -105,6 +32,7 @@ M,29235.70,11.18
 ONE,11623.50,30.75
 CASH_VALUE,19393.15,`;
 
+// Shared fixture: TradeVille-like pasted text including stock rows and a RON cash row.
 const TRADEVILLE_TEXT = `Instrumente BVB in RON
 simbol\t\t\tNume\tsold\tPret piata\tCost mediu \tVariatie zi \tVariatie cost \tevaluare\tProfit/ Pierdere \tPondere
 TLV\tactivitate\tlichidate pozitie\tBanca Transilvania\t4,759\t37.16\t25.6357\t-0.16%\t44.95%\t176,844.44\t54,117.29\t20.78%
@@ -482,4 +410,14 @@ test("sell suggestions work without fee metadata", () => {
   assert.ok(suggestions.items.length > 0);
   assert.equal(suggestions.feesTotal, 0);
   assert.equal(suggestions.netRaised, suggestions.grossSold);
+});
+
+// Validates the required Sell-mode cash amount: empty, zero, negative and non-numeric values are rejected.
+test("sell mode requires a positive target cash amount", () => {
+  assert.equal(api.isRequiredPositiveAmount(""), false);
+  assert.equal(api.isRequiredPositiveAmount("   "), false);
+  assert.equal(api.isRequiredPositiveAmount(0), false);
+  assert.equal(api.isRequiredPositiveAmount(-1), false);
+  assert.equal(api.isRequiredPositiveAmount("abc"), false);
+  assert.equal(api.isRequiredPositiveAmount("33000"), true);
 });
